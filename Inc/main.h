@@ -90,7 +90,7 @@
 #define Trig_3_GPIO_Port GPIOG
 #define Trig_4_Pin GPIO_PIN_6
 #define Trig_4_GPIO_Port GPIOG
-#define Trig_5_Pin GPIO_PIN_7
+#define Trig_5_Pin GPIO_PIN_2
 #define Trig_5_GPIO_Port GPIOG
 #define Trig_6_Pin GPIO_PIN_8
 #define Trig_6_GPIO_Port GPIOG

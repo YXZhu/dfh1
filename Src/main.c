@@ -55,7 +55,7 @@
 //#include "hmc5983.h"
 //#include "flash.h"
 #include "moto.h"
-//#include "uart.h"
+#include "uart.h"
 #include "math.h"
 #include "mpu.h"
 //#include "dmpctl.h"
@@ -86,11 +86,11 @@ osThreadId defaultTaskHandle;
 
 
 osThreadId Echo_1Handle;
-//osThreadId Echo_2Handle;
-//osThreadId Echo_3Handle;
-//osThreadId Echo_4Handle;
-//osThreadId Echo_5Handle;
-//osThreadId Echo_6Handle;
+osThreadId Echo_2Handle;
+osThreadId Echo_3Handle;
+osThreadId Echo_4Handle;
+osThreadId Echo_5Handle;
+osThreadId Echo_6Handle;
 osThreadId startinitHandle;
 osThreadId main_1Handle;
 
@@ -129,12 +129,12 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
- extern void Echo_1task(void const * argument);
-//void Echo_2task(void const * argument);
-//void Echo_3task(void const * argument);
-//void Echo_4task(void const * argument);
-// void Echo_5task(void const * argument);
-// void Echo_6task(void const * argument);
+extern void Echo_1task(void const * argument);
+extern void Echo_2task(void const * argument);
+extern void Echo_3task(void const * argument);
+extern void Echo_4task(void const * argument);
+extern void Echo_5task(void const * argument);
+extern void Echo_6task(void const * argument);
  void startinittask(void const * argument);
  void main_1task(void const * argument);
  void moto_jztask(void const * argument);
@@ -206,6 +206,7 @@ int main(void)
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;   //GPIO配置为输出
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;         //强上拉
     HAL_GPIO_Init(GPIOG,&GPIO_InitStruct);
+	 //UDelayUS(100000);
 	// HAL_GPIO_WritePin(GPIOG, GPIO_PIN_15,GPIO_PIN_SET);
 	//HAL_Delay(2000);
 	
@@ -231,24 +232,31 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-  /* definition and creation of Echo_1 */
+  /* definition and creation of Echo_1 */ 
+  osThreadDef(main_1, main_1task, osPriorityRealtime, 0, 128);
+  main_1Handle = osThreadCreate(osThread(main_1), NULL);
+  
   osThreadDef(Echo_1, Echo_1task, osPriorityRealtime, 0, 128);
   Echo_1Handle = osThreadCreate(osThread(Echo_1), NULL);
 
-//  /* definition and creation of Echo_2 */
-//  osThreadDef(Echo_2, Echo_2task, osPriorityRealtime, 0, 128);
-//  Echo_2Handle = osThreadCreate(osThread(Echo_2), NULL);
+  /* definition and creation of Echo_2 */
+  osThreadDef(Echo_2, Echo_2task, osPriorityRealtime, 0, 128);
+  Echo_2Handle = osThreadCreate(osThread(Echo_2), NULL);
 
-//  /* definition and creation of Echo_3 */
-//  osThreadDef(Echo_3, Echo_3task, osPriorityRealtime, 0, 128);
-//  Echo_3Handle = osThreadCreate(osThread(Echo_3), NULL);
+  /* definition and creation of Echo_3 */
+  osThreadDef(Echo_3, Echo_3task, osPriorityRealtime, 0, 128);
+  Echo_3Handle = osThreadCreate(osThread(Echo_3), NULL);
 
-//  /* definition and creation of Echo_4 */
-//  osThreadDef(Echo_4, Echo_4task, osPriorityRealtime, 0, 128);
-//  Echo_4Handle = osThreadCreate(osThread(Echo_4), NULL);
+  /* definition and creation of Echo_4 */
+  osThreadDef(Echo_4, Echo_4task, osPriorityRealtime, 0, 128);
+  Echo_4Handle = osThreadCreate(osThread(Echo_4), NULL);
 
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  osThreadDef(Echo_5,Echo_5task,osPriorityRealtime, 0, 128);
+  Echo_5Handle = osThreadCreate(osThread(Echo_5), NULL);
+
+  osThreadDef(Echo_6, Echo_6task, osPriorityRealtime, 0, 128);
+  Echo_6Handle = osThreadCreate(osThread(Echo_6), NULL);
+
 //  osThreadDef(startinit, startinittask, osPriorityNormal, 0, 64);
 //  startinitHandle = osThreadCreate(osThread(startinit), NULL);
   
@@ -256,18 +264,15 @@ int main(void)
   moto_controlHandle = osThreadCreate(osThread(moto_control), NULL);
   osThreadDef(moto_jz, moto_jztask, osPriorityRealtime, 0, 128);
   moto_jzHandle = osThreadCreate(osThread(moto_jz), NULL);
- 						osThreadDef(main_1, main_1task, osPriorityRealtime, 0, 128);
-	               main_1Handle = osThreadCreate(osThread(main_1), NULL);
-						osThreadDef(bz, bztask, osPriorityRealtime, 0, 128);  //要调
-                  bzHandle = osThreadCreate(osThread(bz), NULL);
+
+	osThreadDef(bz, bztask, osPriorityRealtime, 0, 128);  //要调
+	bzHandle = osThreadCreate(osThread(bz), NULL);
   /* definition and creation of Echo_5 */
-//  osThreadDef(Echo_5,Echo_5task,osPriorityRealtime, 0, 128);
-//  Echo_5Handle = osThreadCreate(osThread(Echo_5), NULL);
+
 //	osThreadDef(Test, Testtask, osPriorityRealtime, 0, 256);
 //	TestHandle = osThreadCreate(osThread(Test), NULL);
   /* definition and creation of Echo_6 */
-//  osThreadDef(Echo_6, Echo_6task, osPriorityRealtime, 0, 128);
-//  Echo_6Handle = osThreadCreate(osThread(Echo_6), NULL);
+
 
   osThreadDef(mpu, mputask, osPriorityRealtime, 0, 128);  //要调
   mpuHandle = osThreadCreate(osThread(mpu), NULL);
@@ -854,23 +859,29 @@ void startinittask(void const * argument)
 
 
 extern int32_t setSPA,setSPB;
-int16_t SPEEDA,SPEEDB,setSPEED;
+int32_t setSPEED,speed;
 uint8_t setangle,angleJS,motofrontorturn;//前后
+extern int16_t ReadDisA,ReadDisB;
 
-
-#define LowSpeed 1000
-#define TurnDis 170
+#define LowSpeed 3000
+#define TurnDis 160
 #define LowDis 400
+#define ChangeDis 300 //距离变化最大值
+#define TurnTime 5
+#define frontJ 1
+#define backJ 2
+#define front 5
+#define back 6
+#define right 4
+#define left 3
 
 void main_1task(void const * argument)
 {
 	setangle = 0;
-	angleJS = 3;
+	angleJS = 5;
 	motofrontorturn = 0;
-	SPEEDA = 0;
-	SPEEDB = 0;
-	setSPEED = 2000;
-	osDelay(500);
+	setSPEED = 8000;
+	osDelay(1000);
 	vTaskSuspend(mpuHandle);
 	HAL_GPIO_WritePin(GPIOG, GPIO_PIN_15,GPIO_PIN_SET);
 	TickType_t xLastWakeTime;
@@ -881,403 +892,585 @@ void main_1task(void const * argument)
 //		        ulTaskNotifyTake(pdTRUE, 
 //                 portMAX_DELAY); /* 无限等待 */
 		//echo_1();
-		if(angleJS<10)
+	
+		switch(angleJS)//4为右 3为左
 		{
-					if(setangle == 1)
-					{
-						if(EDjl1>LowDis)
-						{
-							if(EDjl3>300)
-							{
-								if(EDjl5>300)
-								{
-									if(motofrontorturn == 0)
-									{
-										if(!(EDjl2<300&EDjl4<300))
-										{
-											setSPA = LowSpeed;
-											setSPB = LowSpeed;
-											SPEEDA = LowSpeed;
-											SPEEDB = LowSpeed;
-											moto_control1 = 0;
-											moto_front();
-										}
-									}
-								}
-							}
-							if(EDjl2>300)
-							{
-//								if(EDjl3>300)////改过
-//								{
-//									if(EDjl5>300)
-//									{
-////										setSPA = 3000;
-////										setSPB = 3000;
-////										moto_front();
-//									}
-//								}
-							}
-							else
-							{
-								  if(angleJS>=2)
-								  {
-									  if(EDjl5<300)
-									  {
-										  if(EDjl3<300)
-										  {
-											  motofrontorturn = 1;
-										  }
-									  }
-								  }
-								  if(EDjl4<300)
-								  {
-									SPEEDA = setSPEED;
-									SPEEDB = setSPEED;
-									moto_front();
-									moto_control1 = 1;
-								  }/////？？？？
-								if(EDjl3<300)
-								{
-                           SPEEDA = setSPEED;
-									SPEEDB = setSPEED;
-									moto_front();
-									moto_control1 = 1;
-									if(EDjl4>300&angleJS>=2)//g
-									 {
-										 if(motofrontorturn == 1)
-										 {
-											 if(EDjl5>300)//g
-											 {												 
-													moto_control1 = 4;
-													vTaskSuspend(main_1Handle);
-													angleJS++;///js = 3
-													setangle = 0;
-													motofrontorturn = 0;
-											 }
-										 }
-									}						
-								 }	
-							}
-
-						}
-						else
-						{
-							if(angleJS<2)
-							{
-								if(EDjl2<300)
-								{
-									if(EDjl3<300)
-									{
-											
-										if(EDjl1<TurnDis)
-										{
-											if(EDjl4>300)
-											{
-												if(EDjl5>300)
-												{
-													moto_control1 = 3;
-													vTaskSuspend(main_1Handle);
-													angleJS++;	
-													motofrontorturn = 0;
-												}
-											}
-										}
-										else
-										{
-											SPEEDA = LowSpeed;
-											SPEEDB = LowSpeed;
-											 moto_front();
-											moto_control1 = 1;
-										}
-									}
-								}
-							}
-							else
-							{	
-								//if(angleJS<10)
-								//{
-									if(EDjl1<TurnDis)
-									{
-										if(EDjl3>300)
-										{
-											if(EDjl5>300)
-											{
-												moto_control1 = 3;
-												vTaskSuspend(main_1Handle);
-												angleJS++;	///666666							
-												motofrontorturn = 0;
-											}
-										}
-									
-									}
-									else
-									{
-											setSPA = LowSpeed;
-											setSPB = LowSpeed;
-											SPEEDA = LowSpeed;
-											SPEEDB = LowSpeed;
-											moto_control1 = 0;
-											moto_front();
-									}
-								
-									
-							//}
-						}
-						}
-					}
-					else ///setangle = 0;
-					{
-						if(EDjl1<LowDis)//g
-						{
-							if(EDjl2>300)
-							{
-								if(EDjl4>300)
-								{
-									if(motofrontorturn == 0)
-									{
-										setSPA = LowSpeed;
-										setSPB = LowSpeed;
-										SPEEDA = LowSpeed;
-										SPEEDB = LowSpeed;
-										moto_control1 = 0;
-										moto_back();
-									}
-								}
-							}
-						}
-						else
-						{
-							if(EDjl3<300)
-							{								
-									SPEEDA = setSPEED;
-									SPEEDB = setSPEED;
-								    moto_back();//g
-									moto_control1 = 2;
-								if(EDjl4<300) motofrontorturn = 1;
-								else
-								{
-									if(EDjl5>300)
-									{
-										if(motofrontorturn == 1)
-										{
-											moto_control1 = 3;
-											vTaskSuspend(main_1Handle);
-											angleJS++; ///5555
-											motofrontorturn = 0;
-											setangle = 1;
-										}
-									}
-								}
-							}
-							if(EDjl6<=LowDis&setangle == 0)
-							{
-								if(EDjl3>300)
-								{
-									setSPA = LowSpeed;
-									setSPB = LowSpeed;
-									SPEEDA = LowSpeed;
-									SPEEDB = LowSpeed;
-									moto_control1 = 0;
-									moto_back();
-									if(EDjl5>300)
-									{
-										if(EDjl4>300)
-										{
-											if(EDjl6<TurnDis)
-											{
-												moto_control1 = 4;
-												vTaskSuspend(main_1Handle);
-												angleJS++; // 44444
-												motofrontorturn = 0;
-											
-											}
-											
-										}
-									}
-								}
-							}
-						}
-					}
-			//		if(angleJS == 2)
-			//		{
-			//			moto_stop();
-			//			moto_control1 = 0;
-			//		}
-			 
-		}
-      else
-		{
-			if(EDjl1>LowDis)
+			case 0:
 			{
-			  if(EDjl2<300)
-			  {
-				  if(EDjl3<300)
-				  {
-					  if(motofrontorturn != 2)
-					  {
-						SPEEDA = setSPEED;
-						SPEEDB = setSPEED;
-						moto_front();
-						moto_control1 = 1;
-					  }
-					  else
-					  {
-						SPEEDA = setSPEED;
-						SPEEDB = setSPEED;
-						moto_back();
-						moto_control1 = 2; 
-					  }
-				  }
-			  }
-			  else
-			  {
-				  if(EDjl4>300)
-				  {
-					  if(angleJS >= 12)
-					  {
-						  if(EDjl3>300)
-						  {
-							  osDelay(500);
-							  moto_stop();
-							  moto_control1 = 0;
-							  vTaskDelete(main_1Handle);
-						  }
-					  }
-				  }
-			  }
-		   }
-			else
-			{
-				if(EDjl2<300)
+				if(EDjl1>LowDis)
 				{
-					if(EDjl3<300)
+					if(EDjl2 > ChangeDis)
 					{
-						if(EDjl1<TurnDis)
-						{
-							if(EDjl5>300)
+						speed = LowSpeed;
+						moto_control1 = front;
+					}
+					else
+					{
+						speed = setSPEED;
+						moto_control1 = frontJ;
+					}
+				}
+				else 
+				{
+						speed = LowSpeed;
+					 if(EDjl5 > ChangeDis)
+					 {
+						 if(EDjl3 < ChangeDis)
+						 {
+							 if(EDjl1 < TurnDis)
 							{
-								moto_control1 = 3;
+								moto_control1 = right;
 								vTaskSuspend(main_1Handle);
-								angleJS++;	
-								//motofrontorturn = 0;
+								angleJS = front;
 							}
 						}
-						else
+					}
+				}						 
+			}
+			break;
+			case 1:
+			{
+				if(EDjl1 > ChangeDis) 
+				{
+					speed = setSPEED;
+					moto_control1 = frontJ;
+				}
+				else
+				{
+					speed = LowSpeed;
+					if(EDjl5 > ChangeDis)
+					{
+						if(EDjl3 < ChangeDis)
 						{
-							SPEEDA = LowSpeed;
-							SPEEDB = LowSpeed;
-							 moto_front();
-							moto_control1 = 1;
+							if(EDjl1 < TurnDis)
+						   {
+								moto_control1 = right;
+								vTaskSuspend(main_1Handle);
+								angleJS = 2;
+							}
 						}
+					}
+				}
+			}
+			break;
+			case 2:
+			{
+				do
+				{
+					moto_control1 = frontJ;
+					speed = setSPEED;					
+					osDelayUntil(&xLastWakeTime, xFrequency);	
+				}					
+				while(EDjl4 > ChangeDis);
+				while(EDjl4 < ChangeDis)
+				{
+					moto_control1 = frontJ;
+					speed = setSPEED;					
+					osDelayUntil(&xLastWakeTime, xFrequency);	
+				}						
+				while(EDjl4 > ChangeDis)
+				{
+					moto_control1 = frontJ;
+					speed = LowSpeed;	
+               if(EDjl5 > ChangeDis)
+					{
+						moto_control1 = 0;
+						moto_frontDis(600,600,LowSpeed);
+						moto_control1 = left;
+						vTaskSuspend(main_1Handle);
+						angleJS = 3;
+						break;
+					}
+					osDelayUntil(&xLastWakeTime, xFrequency);
+				}
+			}
+	      break;
+			case 3:
+			{
+				if(EDjl6 > LowDis)
+				{
+					if(EDjl3 > ChangeDis)
+					{
+						moto_control1 = back;
+						speed = setSPEED;
+					}
+					else
+					{
+						moto_control1 = backJ;
+						speed = setSPEED;
 					}
 				}
 				else
 				{
-					if(EDjl1<TurnDis)
+					if(EDjl5 > ChangeDis)
 					{
-						if(EDjl3>300)
+						if(EDjl6 < TurnDis)
 						{
-							moto_control1 = 3;
-						   vTaskSuspend(main_1Handle);
-						   angleJS++;	
-							//moto_back();
-							//moto_control1 = 2;
-							motofrontorturn = 2;
+							if(EDjl4 > ChangeDis)
+							{
+
+								moto_control1 = left;
+								vTaskSuspend(main_1Handle);
+								angleJS = 4;
+							}
 						}
-					}
-					else
-					{
-							setSPA = LowSpeed;
-							setSPA = LowSpeed;
-							SPEEDA = LowSpeed;
-							SPEEDB = LowSpeed;
-							moto_front();
-							moto_control1 = 0;
+						else
+						{
+							moto_control1 = back;
+							speed = LowSpeed;
+						}
 					}
 				}
 			}
+			break;
+			case 4:
+			{
+				do
+				{
+					moto_control1 = backJ;
+					speed = setSPEED;					
+					osDelayUntil(&xLastWakeTime, xFrequency);	
+				}					
+				while(EDjl5 > ChangeDis);
+				while(EDjl5 < ChangeDis)
+				{
+					moto_control1 = backJ;
+					speed = setSPEED;					
+					osDelayUntil(&xLastWakeTime, xFrequency);	
+				}						
+				while(EDjl5 > ChangeDis)
+				{
+					moto_control1 = backJ;
+					speed = LowSpeed;	
+               if(EDjl4 > ChangeDis)
+					{
+						moto_control1 = 0;
+						moto_backDis(600,600,LowSpeed);
+						moto_control1 = right;
+						vTaskSuspend(main_1Handle);
+						angleJS = 5;
+						break;
+					}
+					osDelayUntil(&xLastWakeTime, xFrequency);
+				}
+			}
+	      break;
+			case 5:
+			{
+				if(EDjl1 > LowDis)
+				{
+					if(EDjl2 > ChangeDis)
+					{
+						moto_control1 = front;
+						speed = setSPEED;
+					}
+					else
+					{
+						moto_control1 = frontJ;
+						speed = setSPEED;
+					}
+				}
+				else
+				{
+					if(EDjl4 > ChangeDis)
+					{
+						if(EDjl1 < TurnDis)
+						{
+							if(EDjl5 > ChangeDis)
+							{
+
+								moto_control1 = right;
+								vTaskSuspend(main_1Handle);
+								angleJS = 6;
+							}
+						}
+						else
+						{
+							moto_control1 = front;
+							speed = LowSpeed;
+						}
+					}
+				}
+			}
+			break;
+			case 6:
+			{
+            setangle ++;
+ 				if(setangle == 2) angleJS = 7;
+				else angleJS = 2;
+			}
+	      break;
+			case 7:
+			{
+				do
+				{
+					moto_control1 = frontJ;
+					speed = setSPEED;					
+					osDelayUntil(&xLastWakeTime, xFrequency);	
+				}					
+				while(EDjl4 > ChangeDis);
+				while(EDjl4 < ChangeDis)
+				{
+					moto_control1 = frontJ;
+					speed = setSPEED;					
+					osDelayUntil(&xLastWakeTime, xFrequency);	
+				}						
+				while(EDjl4 > ChangeDis)
+				{
+					moto_control1 = frontJ;
+					speed = LowSpeed;	
+               if(EDjl1 < TurnDis)
+					{
+						moto_control1 = right;
+						vTaskSuspend(main_1Handle);
+						angleJS = 8;
+						break;
+					}
+					osDelayUntil(&xLastWakeTime, xFrequency);
+				}
+			}
+			break;
+			case 8:
+			{
+				if(EDjl1>LowDis)
+				{
+					speed = setSPEED;
+					moto_control1 = frontJ;
+				}
+				else 
+				{
+					speed = LowSpeed;
+					 if(EDjl4 > ChangeDis)
+					 {
+						 if(EDjl5 > ChangeDis)
+						 {
+							 if(EDjl1 < TurnDis)
+							{
+								moto_control1 = right;
+								vTaskSuspend(main_1Handle);
+								angleJS = 9;
+							}
+						}
+					}
+				}						 
+			}
+			break;
+			case 9:
+			{
+				if(EDjl2 < ChangeDis)
+				{
+					speed = setSPEED;
+					moto_control1 = backJ;
+				}
+				else
+				{
+					moto_control1 = 0;
+					moto_stop();
+					angleJS = 10;
+				}
+			}
+			break;
+			default:break;
 		}
+		
+//		if(angleJS<10)   ///3为右 4为左
+//		{
+//					if(setangle == 1)
+//					{
+//						if(EDjl1>LowDis)
+//						{
+//							if(EDjl3>300)
+//							{
+//								if(EDjl5>300)
+//								{
+//									if(motofrontorturn == 0)
+//									{
+//										if(!(EDjl2<300&EDjl4<300))
+//										{
+//											speed = LowSpeed;
+//											moto_control1 = 5;
+//										}
+//									}
+//								}
+//							}
+//							if(EDjl2>300)
+//							{
+////								if(EDjl3>300)////改过
+////								{
+////									if(EDjl5>300)
+////									{
+//////										setSPA = 3000;
+//////										setSPB = 3000;
+//////										moto_front();
+////									}
+////								}
+//							}
+//							else
+//							{
+//								  if(angleJS>=2)
+//								  {
+//									  if(EDjl5<300)
+//									  {
+//										  if(EDjl3<300)
+//										  {
+//											  motofrontorturn = 1;
+//										  }
+//									  }
+//								  }
+//								  if(EDjl4<300)
+//								  {
+//									speed = setSPEED;
+//							
+//									moto_control1 = 1;
+//								  }/////？？？？
+//								if(EDjl3<300)
+//								{
+//                           speed = setSPEED;
+//						
+//									moto_control1 = 1;
+//									if(EDjl4>300&angleJS>=2)//g
+//									 {
+//										 if(motofrontorturn == 1)
+//										 {
+//											 if(EDjl5>300)//g
+//											 {												 
+//													moto_control1 = 4;
+//													vTaskSuspend(main_1Handle);
+//													angleJS++;///js = 3
+//													setangle = 0;
+//													motofrontorturn = 0;
+//											 }
+//										 }
+//									}						
+//								 }	
+//							}
+
+//						}
+//						else
+//						{
+//							if(angleJS<2)
+//							{
+//								if(EDjl2<300)
+//								{
+//									if(EDjl3<300)
+//									{
+//											
+//										if(EDjl1<TurnDis)
+//										{
+//											if(EDjl4>300)
+//											{
+//												if(EDjl5>300)
+//												{
+//													moto_control1 = 3;
+//													vTaskSuspend(main_1Handle);
+//													angleJS++;	
+//													motofrontorturn = 0;
+//												}
+//											}
+//										}
+//										else
+//										{
+//											speed = LowSpeed;
+//											
+//											moto_control1 = 1;
+//										}
+//									}
+//								}
+//							}
+//							else
+//							{	
+//								//if(angleJS<10)
+//								//{
+//									if(EDjl1<TurnDis)
+//									{
+//										if(EDjl3>300)
+//										{
+//											if(EDjl5>300)
+//											{
+//												moto_control1 = 3;
+//												vTaskSuspend(main_1Handle);
+//												angleJS++;	///666666							
+//												motofrontorturn = 0;
+//											}
+//										}
+//									
+//									}
+//									else
+//									{
+//											speed = LowSpeed;
+//											moto_control1 = 5;
+//										
+//									}
+//								
+//									
+//							//}
+//						}
+//						}
+//					}
+//					else ///setangle = 0;
+//					{
+//						if(EDjl1<LowDis)//g
+//						{
+//							if(EDjl2>300)
+//							{
+//								if(EDjl4>300)
+//								{
+//									if(motofrontorturn == 0)
+//									{
+//										speed = LowSpeed;
+//										moto_control1 = 6;
+//									
+//									}
+//								}
+//							}
+//						}
+//						else
+//						{
+//							if(EDjl3<300)
+//							{								
+//									speed = setSPEED;
+//								    //moto_back();//g
+//									moto_control1 = 2;
+//								if(EDjl4<300) motofrontorturn = 1;
+//								else
+//								{
+//									if(EDjl5>300)
+//									{
+//										if(motofrontorturn == 1)
+//										{
+//											moto_control1 = 3;
+//											vTaskSuspend(main_1Handle);
+//											angleJS++; ///5555
+//											motofrontorturn = 0;
+//											setangle = 1;
+//										}
+//									}
+//								}
+//							}
+//							if(EDjl6<=LowDis&setangle == 0)
+//							{
+//								if(EDjl3>300)
+//								{
+//									speed = LowSpeed;
+//									moto_control1 = 6;
+//									
+//									if(EDjl5>300)
+//									{
+//										if(EDjl4>300)
+//										{
+//											if(EDjl6<TurnDis)
+//											{
+//												moto_control1 = 4;
+//												vTaskSuspend(main_1Handle);
+//												angleJS++; // 44444
+//												motofrontorturn = 0;
+//											
+//											}
+//											
+//										}
+//									}
+//								}
+//							}
+//						}
+//					}
+//			//		if(angleJS == 2)
+//			//		{
+//			//			moto_stop();
+//			//			moto_control1 = 0;
+//			//		}
+//			 
+//		}
+//      else
+//		{
+//			if(EDjl1>LowDis)
+//			{
+//			  if(EDjl2<300)
+//			  {
+//				  if(EDjl3<300)
+//				  {
+//					  if(motofrontorturn != 2)
+//					  {
+//						speed = setSPEED;
+//					
+//						moto_control1 = 1;
+//					  }
+//					  else
+//					  {
+//						speed = setSPEED;
+//					
+//						moto_control1 = 2; 
+//					  }
+//				  }
+//			  }
+//			  else
+//			  {
+//				  if(EDjl4>300)
+//				  {
+//					  if(angleJS >= 12)
+//					  {
+//						  if(EDjl3>300)
+//						  {
+//							  osDelay(500);
+//							  moto_stop();
+//							  moto_control1 = 0;
+//							  vTaskDelete(main_1Handle);
+//						  }
+//					  }
+//				  }
+//			  }
+//		   }
+//			else
+//			{
+//				if(EDjl2<300)
+//				{
+//					if(EDjl3<300)
+//					{
+//						if(EDjl1<TurnDis)
+//						{
+//							if(EDjl5>300)
+//							{
+//								moto_control1 = 3;
+//								vTaskSuspend(main_1Handle);
+//								angleJS++;	
+//								//motofrontorturn = 0;
+//							}
+//						}
+//						else
+//						{
+//							speed = LowSpeed;
+//						
+//							moto_control1 = 1;
+//						}
+//					}
+//				}
+//				else
+//				{
+//					if(EDjl1<TurnDis)
+//					{
+//						if(EDjl3>300)
+//						{
+//							moto_control1 = 3;
+//						   vTaskSuspend(main_1Handle);
+//						   angleJS++;	
+//							//moto_back();
+//							//moto_control1 = 2;
+//							motofrontorturn = 2;
+//						}
+//					}
+//					else
+//					{
+//							speed = LowSpeed;
+//						
+//							moto_control1 = 5;
+//					}
+//				}
+//			}
+//		}
 					
 		osDelayUntil(&xLastWakeTime, xFrequency);			  
 		//osDelay (5);		
 	}
 }
-
-
-
-
-
-
-
-//void Echo_2task(void const * argument)
-//{
-
-//  /* USER CODE BEGIN 5 */
-//  /* Infinite loop */
-
-//  for(;;)
-//  {
-//	   echo_2();
-//		osDelay(1);
-//  }
-//  /* USER CODE END 5 */ 
-//}
-//void Echo_3task(void const * argument)
-//{
-
-//  /* USER CODE BEGIN 5 */
-//  /* Infinite loop */
-
-//  for(;;)
-//  {
-//	   echo_3();
-//		osDelay(1);
-//  }
-//  /* USER CODE END 5 */ 
-//}
-//void Echo_4task(void const * argument)
-//{
-
-//  /* USER CODE BEGIN 5 */
-//  /* Infinite loop */
-
-//  for(;;)
-//  {
-//	   echo_4();
-//		osDelay(1);
-//  }
-//  /* USER CODE END 5 */ 
-//}
-///* Echo_5Task function */
-//void Echo_5task(void const * argument)
-//{
-
-//  /* USER CODE BEGIN 5 */
-//  /* Infinite loop */
-
-//  for(;;)
-//  {
-//	   echo_5();
-//		osDelay(1);
-//  }
-//  /* USER CODE END 5 */ 
-//}
-///* Echo_5Task function */
-
-///* Echo_6task function */
-//void Echo_6task(void const * argument)
-//{
-//  /* USER CODE BEGIN Echo_2task */
-//	
-//  /* Infinite loop */
-
-//  for(;;)
-//  {
-//       echo_6();
-//		osDelay(1);
-//  }
-//  /* USER CODE END Echo_2task */
-//}
 
 void Testtask(void const * argument)
 {
@@ -1288,12 +1481,13 @@ void Testtask(void const * argument)
 uint8_t JL[] = {"F---.- L---.- E---.- R---.- G---.- B---.- ---°  -----, -----, ----- --- ---\n\r"};
 //uint8_t JL1[] = {"--------------------------\n\r"}; 
 	TickType_t xLastWakeTime;
-	const TickType_t xFrequency = 100;
+	const TickType_t xFrequency = 20;
 	xLastWakeTime = xTaskGetTickCount();
   for(;;)
   { 
 
-		  
+		print_usart2("F%d\r\nL%d\r\nE%d\r\nR%d\r\nG%d\r\nB%d\r\n",EDjl1,EDjl2,EDjl3,EDjl4,EDjl5,EDjl6);
+			  
 	    //angle1 = angle;    
 	   //JL[1] = echo1[0]/10000+48;
 		JL[1] = EDjl1%10000/1000+48;
@@ -1379,7 +1573,7 @@ uint8_t JL[] = {"F---.- L---.- E---.- R---.- G---.- B---.- ---°  -----, -----, 
 //		JL[23] = EDjl4/100+48;
 //		JL[24] = EDjl4%100/10+48;
 //		JL[25] = EDjl4%100%10+48;
-	 HAL_UART_Transmit_DMA(&huart3,JL,78);
+	// HAL_UART_Transmit_DMA(&huart3,JL,78);
 	 osDelayUntil(&xLastWakeTime, xFrequency);
   }
   /* USER CODE END StartTask05 */
@@ -1424,13 +1618,25 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	  Timec = 0;
 	 SPDA = __HAL_TIM_GET_COUNTER(&htim8);
 	 SPDB = __HAL_TIM_GET_COUNTER(&htim4);
+	  ReadDisA = ReadDisA + SPDA;
+	  ReadDisB = ReadDisB + SPDB;
 	  __HAL_TIM_SET_COUNTER(&htim8,0);
 	  __HAL_TIM_SET_COUNTER(&htim4,0);
   }
   else Timec ++;  
   }
 /* USER CODE BEGIN Callback 1 */
-
+//  if(Timec == 25)
+//  {
+//	  Timec = 0;
+//	 SPDA = __HAL_TIM_GET_COUNTER(&htim8);
+//	 SPDB = __HAL_TIM_GET_COUNTER(&htim4);
+//	  ReadDisA = ReadDisA + SPDA;
+//	  ReadDisB = ReadDisB + SPDB;
+//	  __HAL_TIM_SET_COUNTER(&htim8,0);
+//	  __HAL_TIM_SET_COUNTER(&htim4,0);
+//  }
+//  else Timec ++;  
 /* USER CODE END Callback 1 */
 }
 

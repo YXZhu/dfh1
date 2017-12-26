@@ -9,6 +9,8 @@ void moto_back(void);
 void moto_left(unsigned char a);
 void moto_right(unsigned char a);
 void moto_stop(void);
+void moto_frontDis(int16_t setDisA,int16_t setDisB,int32_t speed1);
+void moto_backDis(int16_t setDisA,int16_t setDisB,int32_t speed1);
 void moto_jztask(void const * argument);
 void bztask(void const * argument);
 void moto_controltask(void const * argument);

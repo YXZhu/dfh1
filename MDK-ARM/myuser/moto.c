@@ -13,10 +13,11 @@
 //double angle;
 extern uint16_t EDjl1,EDjl2,EDjl3,EDjl4,EDjl5,EDjl6;
 extern int16_t YAW;
-extern int16_t SPEEDA,SPEEDB;
-int16_t SPDA,SPDB;
+extern int32_t setSPEED,speed;
+//extern int16_t SPEEDA,SPEEDB;
+int16_t SPDA,SPDB; //25ms 测的速度计数；
 uint16_t SA=0,SB=0,Timec=0;
-int32_t setSPA,setSPB;
+int32_t setSPA,setSPB; //设置目标电机速度值
 
 //void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 //{
@@ -30,10 +31,9 @@ int32_t setSPA,setSPB;
 //	}
 //}
 
-#define TurnSpeed 1200
-#define MiniDis 140
+#define TurnSpeed 3000
+#define MiniDis 130
 #define MaxDis  160
-
 
 int16_t angle_temp1 = 0,angle_temp2 = 0,angle_temp3 = 0,angle_temp4=0,angle_time = 0;
 int16_t moto_angle(unsigned char SF,int16_t setangle,unsigned char a)
@@ -41,6 +41,8 @@ int16_t moto_angle(unsigned char SF,int16_t setangle,unsigned char a)
 	if(angle_temp1 == 0)
 	{
 		//angle_temp2 = YAW;
+		setSPA = TurnSpeed;
+      setSPB = TurnSpeed;
 		angle_temp1 = 1;
 		angle_time = 0;
 		if(SF ==1)
@@ -139,8 +141,8 @@ void moto_back(void)
 
 void moto_right(unsigned char a)
 {	
-	setSPA = TurnSpeed;
-   setSPB = TurnSpeed;
+//	setSPA = TurnSpeed;
+//   setSPB = TurnSpeed;
    switch(a)
 	{
 		case 0:
@@ -168,8 +170,8 @@ void moto_right(unsigned char a)
 
 void moto_left(unsigned char a)
 {	
-   setSPA = TurnSpeed;
-   setSPB = TurnSpeed;
+//   setSPA = TurnSpeed;
+//   setSPB = TurnSpeed;
 	switch(a)
 	{
 		case 0:
@@ -200,6 +202,81 @@ void moto_stop(void)
 }
 
 uint8_t moto_control1;
+
+//设置机器行走固定距离，A走多少，B走多少，速度
+//读取值 设定值
+// direction 机器方向
+int16_t ReadDisA = 0,ReadDisB = 0;
+void moto_frontDis(int16_t setDisA,int16_t setDisB,int32_t speed1)
+{
+
+	TickType_t xLastWakeTime;
+	const TickType_t xFrequency = 10;
+	xLastWakeTime = xTaskGetTickCount();
+	ReadDisA = 0;
+	ReadDisB = 0;
+	setSPB = setSPA = speed1;
+	while(1)
+	{
+		if(ReadDisA>-setDisA)
+		{
+			HAL_GPIO_WritePin(N1_GPIO_Port,N1_Pin,GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(N2_GPIO_Port,N2_Pin,GPIO_PIN_SET);
+		}
+		else
+		{
+			HAL_GPIO_WritePin(N1_GPIO_Port,N1_Pin|N2_Pin,GPIO_PIN_RESET);
+			//if(ReadDisB<=-setDisB) break ;
+		}
+		if(ReadDisB>-setDisB)
+		{
+			HAL_GPIO_WritePin(N4_GPIO_Port,N4_Pin,GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(N3_GPIO_Port,N3_Pin,GPIO_PIN_SET);
+		}
+		else
+		{
+			HAL_GPIO_WritePin(N1_GPIO_Port,N3_Pin|N4_Pin,GPIO_PIN_RESET);
+			//if(ReadDisA<=-setDisA) break ;
+		}
+		if(ReadDisB<=-setDisB&ReadDisA<=-setDisA) break ;
+		osDelayUntil(&xLastWakeTime, xFrequency);
+	}
+}
+void moto_backDis(int16_t setDisA,int16_t setDisB,int32_t speed1)
+{
+	
+	TickType_t xLastWakeTime;
+	const TickType_t xFrequency = 10;
+	xLastWakeTime = xTaskGetTickCount();
+	ReadDisA = 0;
+	ReadDisB = 0;
+	setSPB = setSPA = speed1;
+	while(1)
+	{
+		if(ReadDisA<setDisA)
+		{
+			HAL_GPIO_WritePin(N2_GPIO_Port,N2_Pin,GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(N1_GPIO_Port,N1_Pin,GPIO_PIN_SET);
+		}
+		else
+		{
+			HAL_GPIO_WritePin(N1_GPIO_Port,N1_Pin|N2_Pin,GPIO_PIN_RESET);
+			//if(ReadDisB<=-setDisB) break ;
+		}
+		if(ReadDisB<setDisB)
+		{
+			HAL_GPIO_WritePin(N3_GPIO_Port,N3_Pin,GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(N4_GPIO_Port,N4_Pin,GPIO_PIN_SET);
+		}
+		else
+		{
+			HAL_GPIO_WritePin(N1_GPIO_Port,N3_Pin|N4_Pin,GPIO_PIN_RESET);
+			//if(ReadDisA<=-setDisA) break ;
+		}
+		if(ReadDisB>=setDisB&ReadDisA>=setDisA) break ;
+		osDelayUntil(&xLastWakeTime, xFrequency);
+	}
+}
 extern osThreadId main_1Handle;
 extern osThreadId moto_jzHandle;
 extern osThreadId mpuHandle;
@@ -214,41 +291,43 @@ void moto_jztask(void const * argument)
 	const TickType_t xFrequency1 = 8;
 	xLastWakeTime = xTaskGetTickCount();
 	moto_control1 = 0;
-   SPEEDA = 0;
-	SPEEDB = 0;
+	//speed = 9990;
 	for(;;)
 	{
 		//if(EDjl2>EDjl3) 
 		switch(moto_control1)
 		{
+			
 			case 1:
 			{
 				if(EDjl2<MiniDis)
 				{
 						moto_front();
-						setSPA = SPEEDA;
-						setSPB = SPEEDB/4+200;
+						setSPA = speed;
+						setSPB = speed/2;
 				}
 				else if(EDjl2>MaxDis)
 				{	
 					 moto_front();
-					 setSPA = SPEEDA/4+200;
-					 setSPB = SPEEDB;			
+					 setSPA = speed/2;
+					 setSPB = speed;			
 				}
 				else
 				{
 					if(EDjl3<MiniDis)
 					{
+						setSPB = setSPA = speed;
 						moto_left(0);
 					}
 					else if(EDjl3>MaxDis)
 					{
+						setSPB = setSPA = speed;
 						moto_right(0);
 					}
 					else
 					{
-						setSPA = SPEEDA;
-						setSPB = SPEEDB;
+						setSPA = speed;
+						setSPB = speed;
 						moto_front();
 					}
 				 }	
@@ -261,37 +340,39 @@ void moto_jztask(void const * argument)
 					//if(EDjl2<175)
 					//{
 						moto_back();
-						setSPA = SPEEDA;
-						setSPB = SPEEDB/4+200;
+						setSPA = speed;
+						setSPB = speed/2;
 					//}
 				}
 				else if(EDjl3>MaxDis)
 				{	
 					   moto_back();
-						setSPA = SPEEDA/4+200;
-						setSPB = SPEEDB;			
+						setSPA = speed/2;
+						setSPB = speed;			
 				}
 				else
 				{
 					if(EDjl2<MiniDis)
 					{
-						moto_left(2);
+						setSPB = setSPA = speed;
+						moto_right(2);
 					}
 					else if(EDjl2>MaxDis)
 					{
-						moto_right(2);
+						setSPB = setSPA = speed;
+						moto_left(2);
 					}
 					else
 					{
-						setSPA = SPEEDA;
-						setSPB = SPEEDB;
+						setSPA = speed;
+						setSPB = speed;
 						moto_back();
 					}
 				}	
 			}
 			break;
-			case 3:
-			{
+			case 4:  
+			{//右
 				vTaskSuspend(Echo_1Handle);
 				vTaskResume(mpuHandle);
 			   vTaskSuspend(bzHandle);
@@ -319,8 +400,8 @@ void moto_jztask(void const * argument)
 				
 			}
 			break;
-			case 4:
-			{
+			case 3:  
+			{//左  
 				vTaskSuspend(Echo_1Handle);
 				vTaskResume(mpuHandle);
 				vTaskSuspend(bzHandle);
@@ -344,6 +425,17 @@ void moto_jztask(void const * argument)
 				
 			}
 			break;
+			case 5: //前进
+			{
+				moto_front();
+				setSPB = setSPA = speed;
+			}
+			break;
+			case 6: //后退
+			{
+				moto_back();
+				setSPB = setSPA = speed;
+			}
 			default:break;
 		}
 	osDelayUntil(&xLastWakeTime, xFrequency);
@@ -351,7 +443,6 @@ void moto_jztask(void const * argument)
 	}
 		
 }
-extern uint16_t setSPEED;
 extern uint8_t setangle,angleJS;
 
 
@@ -561,11 +652,11 @@ void moto_controltask(void const * argument)
 	//HAL_UART_Receive_DMA(&huart3,aa,2); 
 	for(;;)
 	{
-		
-		
-		
-		SPDA = fabs((float)SPDA);
-		SPDB = fabs((float)SPDB);
+
+//		SPDA = fabs((float)SPDA);
+//		SPDB = fabs((float)SPDB);
+		if(SPDA<0) SPDA = - SPDA;
+		if(SPDB<0) SPDB = - SPDB;
 		    // pid.ActualSpeed = 0;
 		SPA_temp = User_PidSpeedControlA(setSPA,SPDA*49.8);
 		SPB_temp = User_PidSpeedControlB(setSPB,SPDB*49.8);
