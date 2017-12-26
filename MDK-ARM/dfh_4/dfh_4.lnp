@@ -27,6 +27,7 @@
 "dfh_4\heap_4.o"
 "dfh_4\port.o"
 "dfh_4\system_stm32f4xx.o"
+"D:\Program Files\keil5\ARM\CMSIS\Lib\ARM\arm_cortexM4lf_math.lib"
 "dfh_4\stm32f4xx_it.o"
 "dfh_4\stm32f4xx_hal_msp.o"
 "dfh_4\freertos.o"
@@ -38,9 +39,6 @@
 "dfh_4\pidcontoller.o"
 "dfh_4\encoder.o"
 "dfh_4\uart.o"
-"dfh_4\inv_mpu.o"
-"dfh_4\inv_mpu_dmp_motion_driver.o"
-"dfh_4\dmpctl.o"
 --library_type=microlib --strict --scatter "dfh_4\dfh_4.sct"
 
 --diag_suppress=L6329 --summary_stderr --info summarysizes --map --xref --callgraph --symbols

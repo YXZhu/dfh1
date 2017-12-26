@@ -36,27 +36,32 @@
  * fabsf(float x)
  * min(int a, int b)
  */
-#if defined EMPL_TARGET_STM32F4   
-#include "main.h"
-   
-#define i2c_write   Sensors_I2C_WriteRegister
-#define i2c_read    Sensors_I2C_ReadRegister 
-#define delay_ms    mdelay
-#define get_ms      get_tick_count
-#define log_i       MPL_LOGI
-#define log_e       MPL_LOGE
-#define min(a,b) ((a<b)?a:b)
-   
-#elif defined MOTION_DRIVER_TARGET_MSP430
+#if defined EMPL_TARGET_STM32F4
+#include "mpu.h"
 #include "main.h"
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
-#include "mpu.h"
 #define i2c_write   i2c_write
 #define i2c_read    i2c_read
-#define delay_ms    osDelay
-#define printf print_usart2
-
+#define delay_ms    HAL_Delay
+#define min(a,b) ((a<b)?a:b)
+   
+#elif defined MOTION_DRIVER_TARGET_MSP430
+#include "mpu.h"
+#include "main.h"
+#include "stm32f4xx_hal.h"
+#include "cmsis_os.h"
+#define i2c_write   i2c_write
+#define i2c_read    i2c_read
+#define delay_ms    HAL_Delay
+#define get_ms      msp430_get_clock_ms
+static inline int reg_int_cb(struct int_param_s *int_param)
+{
+    return msp430_reg_int_cb(int_param->cb, int_param->pin, int_param->lp_exit,
+        int_param->active_low);
+}
+#define log_i(...)     do {} while (0)
+#define log_e(...)     do {} while (0)
 /* labs is already defined by TI's toolchain. */
 /* fabs is for doubles. fabsf is for floats. */
 #define fabs        fabsf
@@ -668,7 +673,7 @@ int mpu_reg_dump(void)
             continue;
         if (i2c_read(st.hw->addr, ii, 1, &data))
             return -1;
-        //log_i("%#5x: %#5x\r\n", ii, data);
+      //  log_i("%#5x: %#5x\r\n", ii, data);
     }
     return 0;
 }
@@ -764,7 +769,7 @@ int mpu_init(struct int_param_s *int_param)
 
 #ifndef EMPL_TARGET_STM32F4    
     if (int_param)
-       // reg_int_cb(int_param);
+        reg_int_cb(int_param);
 #endif
 
 #ifdef AK89xx_SECONDARY
@@ -892,7 +897,8 @@ int mpu_get_gyro_reg(short *data, unsigned long *timestamp)
     data[0] = (tmp[0] << 8) | tmp[1];
     data[1] = (tmp[2] << 8) | tmp[3];
     data[2] = (tmp[4] << 8) | tmp[5];
-
+  //  if (timestamp)
+//        get_ms(timestamp);
     return 0;
 }
 
@@ -914,7 +920,8 @@ int mpu_get_accel_reg(short *data, unsigned long *timestamp)
     data[0] = (tmp[0] << 8) | tmp[1];
     data[1] = (tmp[2] << 8) | tmp[3];
     data[2] = (tmp[4] << 8) | tmp[5];
-
+  //  if (timestamp)
+//        get_ms(timestamp);
     return 0;
 }
 
@@ -935,6 +942,7 @@ int mpu_get_temperature(long *data, unsigned long *timestamp)
     if (i2c_read(st.hw->addr, st.reg->temp, 2, tmp))
         return -1;
     raw = (tmp[0] << 8) | tmp[1];
+    if (timestamp)
 
 
     data[0] = (long)((35 + ((raw - (float)st.hw->temp_offset) / st.hw->temp_sens)) * 65536L);
@@ -1756,7 +1764,7 @@ int mpu_read_fifo(short *gyro, short *accel, unsigned long *timestamp,
             return -2;
         }
     }
-    
+
 
     if (i2c_read(st.hw->addr, st.reg->fifo_r_w, packet_size, data))
         return -1;

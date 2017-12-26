@@ -80,7 +80,7 @@ int32_t User_PidSpeedControlA(int32_t SpeedTag,int32_t spnow)
    PID_ControlA.kp      = 2.22;             //写入比例系数为15
    PID_ControlA.ki      = 0.785;              //写入积分系数为5
    PID_ControlA.kd      = 1.196;              //写入微分系数为5
-  PID_ControlA.errILim = 1000;           //写入误差积分上限为1000 下限为-1000
+   PID_ControlA.errILim = 1000;           //写入误差积分上限为1000 下限为-1000
 
    PID_AbsoluteMode(&PID_ControlA);       //执行绝对式PID算法
 	
@@ -103,7 +103,7 @@ int32_t User_PidSpeedControlB(int32_t SpeedTag,int32_t spnow)
    PID_ControlB.kp      = 2.22;             //写入比例系数为15 2.58
    PID_ControlB.ki      = 0.785;              //写入积分系数为5
    PID_ControlB.kd      = 1.196;              //写入微分系数为5
-  PID_ControlB.errILim = 1000;           //写入误差积分上限为1000 下限为-1000
+   PID_ControlB.errILim = 1000;           //写入误差积分上限为1000 下限为-1000
 
    PID_AbsoluteMode(&PID_ControlB);       //执行绝对式PID算法
 	

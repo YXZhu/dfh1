@@ -363,9 +363,9 @@
             <useXO>0</useXO>
             <VariousControls>
               <MiscControls>--C99</MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F407xx,MOTION_DRIVER_TARGET_MSP430,MPU6050</Define>
+              <Define>USE_HAL_DRIVER,STM32F407xx,EMPL_TARGET_STM32F4,MPU6050,__CC_ARM,ARM_MATH_CM4</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;  ../Drivers/STM32F4xx_HAL_Driver/Inc;  ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;  ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;  ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;  ../Middlewares/Third_Party/FreeRTOS/Source/include;  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;  ../Drivers/CMSIS/Include;  .\myuser;  .\eMPL</IncludePath>
+              <IncludePath>../Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Drivers/CMSIS/Include;.\myuser;.\eMPL;.\core\eMPL-hal;.\core\mllite;.\core\mpl;.\core\driver\include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -566,6 +566,11 @@
               <FileType>1</FileType>
               <FilePath>../Src/system_stm32f4xx.c</FilePath>
             </File>
+            <File>
+              <FileName>arm_cortexM4lf_math.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>D:\Program Files\keil5\ARM\CMSIS\Lib\ARM\arm_cortexM4lf_math.lib</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -625,21 +630,6 @@
               <FileName>uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\myuser\uart.c</FilePath>
-            </File>
-            <File>
-              <FileName>inv_mpu.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\eMPL\inv_mpu.c</FilePath>
-            </File>
-            <File>
-              <FileName>inv_mpu_dmp_motion_driver.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\eMPL\inv_mpu_dmp_motion_driver.c</FilePath>
-            </File>
-            <File>
-              <FileName>dmpctl.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\eMPL\dmpctl.c</FilePath>
             </File>
           </Files>
         </Group>

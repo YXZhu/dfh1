@@ -58,11 +58,12 @@
 //#include "uart.h"
 #include "math.h"
 #include "mpu.h"
-#include "dmpctl.h"
+//#include "dmpctl.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
+I2C_HandleTypeDef hi2c2;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
@@ -113,6 +114,7 @@ static void MX_TIM9_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_I2C2_Init(void);
 void StartDefaultTask(void const * argument);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
@@ -127,7 +129,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-void Echo_1task(void const * argument);
+ extern void Echo_1task(void const * argument);
 //void Echo_2task(void const * argument);
 //void Echo_3task(void const * argument);
 //void Echo_4task(void const * argument);
@@ -135,11 +137,12 @@ void Echo_1task(void const * argument);
 // void Echo_6task(void const * argument);
  void startinittask(void const * argument);
  void main_1task(void const * argument);
- extern void moto_jztask(void const * argument);
+ void moto_jztask(void const * argument);
  extern void moto_controltask(void const * argument);
  extern void mputask(void const * argument);
  void Testtask(void const * argument);
  extern void bztask(void const * argument);
+ 
 /* USER CODE END 0 */
 
 int main(void)
@@ -178,6 +181,7 @@ int main(void)
   MX_USART3_UART_Init();
   MX_TIM8_Init();
   MX_I2C1_Init();
+  MX_I2C2_Init();
 
   /* USER CODE BEGIN 2 */
    HAL_TIM_PWM_Start(&htim9,TIM_CHANNEL_1);
@@ -197,6 +201,12 @@ int main(void)
 	HAL_TIM_Encoder_Start(&htim4,TIM_CHANNEL_2);
 	HAL_TIM_Encoder_Start(&htim8,TIM_CHANNEL_1);
 	HAL_TIM_Encoder_Start(&htim8,TIM_CHANNEL_2);
+	 GPIO_InitTypeDef GPIO_InitStruct;
+	 GPIO_InitStruct.Pin = GPIO_PIN_15;      //此行原有
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;   //GPIO配置为输出
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;         //强上拉
+    HAL_GPIO_Init(GPIOG,&GPIO_InitStruct);
+	// HAL_GPIO_WritePin(GPIOG, GPIO_PIN_15,GPIO_PIN_SET);
 	//HAL_Delay(2000);
 	
 	
@@ -253,7 +263,7 @@ int main(void)
   /* definition and creation of Echo_5 */
 //  osThreadDef(Echo_5,Echo_5task,osPriorityRealtime, 0, 128);
 //  Echo_5Handle = osThreadCreate(osThread(Echo_5), NULL);
-//	osThreadDef(Test, Testtask, osPriorityNormal, 0, 256);
+//	osThreadDef(Test, Testtask, osPriorityRealtime, 0, 256);
 //	TestHandle = osThreadCreate(osThread(Test), NULL);
   /* definition and creation of Echo_6 */
 //  osThreadDef(Echo_6, Echo_6task, osPriorityRealtime, 0, 128);
@@ -355,6 +365,26 @@ static void MX_I2C1_Init(void)
   hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
   hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
   if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
+/* I2C2 init function */
+static void MX_I2C2_Init(void)
+{
+
+  hi2c2.Instance = I2C2;
+  hi2c2.Init.ClockSpeed = 100000;
+  hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c2.Init.OwnAddress1 = 0;
+  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c2.Init.OwnAddress2 = 0;
+  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
@@ -719,6 +749,7 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
@@ -755,7 +786,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : N1_Pin N2_Pin N3_Pin N4_Pin */
   GPIO_InitStruct.Pin = N1_Pin|N2_Pin|N3_Pin|N4_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
@@ -827,28 +858,34 @@ int16_t SPEEDA,SPEEDB,setSPEED;
 uint8_t setangle,angleJS,motofrontorturn;//前后
 
 
-#define LowSpeed 1200
-#define TurnDis 100
+#define LowSpeed 1000
+#define TurnDis 170
+#define LowDis 400
 
 void main_1task(void const * argument)
 {
-	
-	setangle = 1;
-	angleJS = 0;
+	setangle = 0;
+	angleJS = 3;
 	motofrontorturn = 0;
 	SPEEDA = 0;
 	SPEEDB = 0;
-	setSPEED = 4000;
-	osDelay(200);
+	setSPEED = 2000;
+	osDelay(500);
+	vTaskSuspend(mpuHandle);
+	HAL_GPIO_WritePin(GPIOG, GPIO_PIN_15,GPIO_PIN_SET);
+	TickType_t xLastWakeTime;
+	const TickType_t xFrequency = 5;
+	xLastWakeTime = xTaskGetTickCount();
 	for(;;)
 	{
 //		        ulTaskNotifyTake(pdTRUE, 
 //                 portMAX_DELAY); /* 无限等待 */
+		//echo_1();
 		if(angleJS<10)
 		{
 					if(setangle == 1)
 					{
-						if(EDjl1>400)
+						if(EDjl1>LowDis)
 						{
 							if(EDjl3>300)
 							{
@@ -860,6 +897,9 @@ void main_1task(void const * argument)
 										{
 											setSPA = LowSpeed;
 											setSPB = LowSpeed;
+											SPEEDA = LowSpeed;
+											SPEEDB = LowSpeed;
+											moto_control1 = 0;
 											moto_front();
 										}
 									}
@@ -867,15 +907,15 @@ void main_1task(void const * argument)
 							}
 							if(EDjl2>300)
 							{
-								if(EDjl3>300)////改过
-								{
-									if(EDjl5>300)
-									{
-//										setSPA = 3000;
-//										setSPB = 3000;
-//										moto_front();
-									}
-								}
+//								if(EDjl3>300)////改过
+//								{
+//									if(EDjl5>300)
+//									{
+////										setSPA = 3000;
+////										setSPB = 3000;
+////										moto_front();
+//									}
+//								}
 							}
 							else
 							{
@@ -974,6 +1014,8 @@ void main_1task(void const * argument)
 									{
 											setSPA = LowSpeed;
 											setSPB = LowSpeed;
+											SPEEDA = LowSpeed;
+											SPEEDB = LowSpeed;
 											moto_control1 = 0;
 											moto_front();
 									}
@@ -985,7 +1027,7 @@ void main_1task(void const * argument)
 					}
 					else ///setangle = 0;
 					{
-						if(EDjl1<200)//g
+						if(EDjl1<LowDis)//g
 						{
 							if(EDjl2>300)
 							{
@@ -995,6 +1037,8 @@ void main_1task(void const * argument)
 									{
 										setSPA = LowSpeed;
 										setSPB = LowSpeed;
+										SPEEDA = LowSpeed;
+										SPEEDB = LowSpeed;
 										moto_control1 = 0;
 										moto_back();
 									}
@@ -1004,8 +1048,7 @@ void main_1task(void const * argument)
 						else
 						{
 							if(EDjl3<300)
-							{
-								
+							{								
 									SPEEDA = setSPEED;
 									SPEEDB = setSPEED;
 								    moto_back();//g
@@ -1026,12 +1069,14 @@ void main_1task(void const * argument)
 									}
 								}
 							}
-							if(EDjl6<=400&setangle == 0)
+							if(EDjl6<=LowDis&setangle == 0)
 							{
 								if(EDjl3>300)
 								{
 									setSPA = LowSpeed;
 									setSPB = LowSpeed;
+									SPEEDA = LowSpeed;
+									SPEEDB = LowSpeed;
 									moto_control1 = 0;
 									moto_back();
 									if(EDjl5>300)
@@ -1062,7 +1107,7 @@ void main_1task(void const * argument)
 		}
       else
 		{
-			if(EDjl1>400)
+			if(EDjl1>LowDis)
 			{
 			  if(EDjl2<300)
 			  {
@@ -1070,15 +1115,15 @@ void main_1task(void const * argument)
 				  {
 					  if(motofrontorturn != 2)
 					  {
-						SPEEDA = setSPEED ;
+						SPEEDA = setSPEED;
 						SPEEDB = setSPEED;
 						moto_front();
 						moto_control1 = 1;
 					  }
 					  else
 					  {
-						SPEEDA = setSPEED ;
-						SPEEDB = setSPEED ;
+						SPEEDA = setSPEED;
+						SPEEDB = setSPEED;
 						moto_back();
 						moto_control1 = 2; 
 					  }
@@ -1144,6 +1189,8 @@ void main_1task(void const * argument)
 					{
 							setSPA = LowSpeed;
 							setSPA = LowSpeed;
+							SPEEDA = LowSpeed;
+							SPEEDB = LowSpeed;
 							moto_front();
 							moto_control1 = 0;
 					}
@@ -1151,8 +1198,8 @@ void main_1task(void const * argument)
 			}
 		}
 					
-					  
-		osDelay (5);		
+		osDelayUntil(&xLastWakeTime, xFrequency);			  
+		//osDelay (5);		
 	}
 }
 
@@ -1161,19 +1208,7 @@ void main_1task(void const * argument)
 
 
 
-void Echo_1task(void const * argument)
-{
 
-  /* USER CODE BEGIN 5 */
-  /* Infinite loop */
-
-  for(;;)
-  {
-	   echo_1();
-		osDelay(1);
-  }
-  /* USER CODE END 5 */ 
-}
 //void Echo_2task(void const * argument)
 //{
 
@@ -1252,9 +1287,9 @@ void Testtask(void const * argument)
 	uint16_t c;
 uint8_t JL[] = {"F---.- L---.- E---.- R---.- G---.- B---.- ---°  -----, -----, ----- --- ---\n\r"};
 //uint8_t JL1[] = {"--------------------------\n\r"}; 
-
-
-//__HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
+	TickType_t xLastWakeTime;
+	const TickType_t xFrequency = 100;
+	xLastWakeTime = xTaskGetTickCount();
   for(;;)
   { 
 
@@ -1345,7 +1380,7 @@ uint8_t JL[] = {"F---.- L---.- E---.- R---.- G---.- B---.- ---°  -----, -----, 
 //		JL[24] = EDjl4%100/10+48;
 //		JL[25] = EDjl4%100%10+48;
 	 HAL_UART_Transmit_DMA(&huart3,JL,78);
-	 osDelay(100);
+	 osDelayUntil(&xLastWakeTime, xFrequency);
   }
   /* USER CODE END StartTask05 */
 }
@@ -1363,7 +1398,7 @@ void StartDefaultTask(void const * argument)
 
   for(;;)
   {
-	   //echo_1();
+	   //echo_2();
 		osDelay(1);
   }
   /* USER CODE END 5 */ 
@@ -1392,18 +1427,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	  __HAL_TIM_SET_COUNTER(&htim8,0);
 	  __HAL_TIM_SET_COUNTER(&htim4,0);
   }
-  else Timec ++;
+  else Timec ++;  
   }
 /* USER CODE BEGIN Callback 1 */
-//  if(Timec == 50)
-//  {
-//	  Timec = 0;
-//	 SPDA = __HAL_TIM_GET_COUNTER(&htim8);
-//	 SPDB = __HAL_TIM_GET_COUNTER(&htim4);
-//	  __HAL_TIM_SET_COUNTER(&htim8,0);
-//	  __HAL_TIM_SET_COUNTER(&htim4,0);
-//  }
-//  else Timec ++;
+
 /* USER CODE END Callback 1 */
 }
 

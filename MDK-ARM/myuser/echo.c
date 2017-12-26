@@ -163,9 +163,20 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 uint16_t ED1t,ED2t,ED3t,ED4t,ED5t,ED6t;
 extern osThreadId main_1Handle;
 extern uint8_t moto_control1;
+
 void echo_1(void)
 {
-	if(SW1==1) 
+	
+}
+
+void Echo_1task(void const * argument)
+{
+	TickType_t xLastWakeTime;
+	const TickType_t xFrequency = 9;
+	xLastWakeTime = xTaskGetTickCount();
+  for(;;)
+  {
+	   if(SW1==1) 
 		{
 		   HAL_GPIO_WritePin(Trig_1_GPIO_Port,Trig_1_Pin|Trig_2_Pin|Trig_3_Pin|Trig_4_Pin|Trig_5_Pin|Trig_6_Pin,GPIO_PIN_SET);//Trig_1 = 1;			
 			osDelay(1);
@@ -181,7 +192,8 @@ void echo_1(void)
 		}
 		else
 		{	
-		   osDelay(15);
+		   osDelayUntil(&xLastWakeTime, xFrequency);
+		//osDelay(9);
 			if(echo1[0]<echo1[1]) ED1 = echo1[1] - echo1[0];
 			else ED1 = (50000-echo1[0]) + echo1[1];			   
 			ED1*=0.17;
@@ -222,14 +234,12 @@ void echo_1(void)
 			ED6*=0.17;
 			if(((ED6 - ED6t) > 100) || ((ED6t - ED6) > 100)) EDjl6 = ED6t;
     		else	EDjl6 = ED6;
-			ED6t = ED6;	
-			
-//			   if(ED1<1600)	EDjl1 = ED1*0.8+EDjl1*0.2;
-//            else EDjl1 = 1600;			
-				SW1 = 1;	
-//				if(moto_control1 == 0|moto_control1 == 1|moto_control1 == 2)
-//         xTaskNotifyGive(main_1Handle);				
+			ED6t = ED6;			
+				SW1 = 1;			
 		}
+		osDelay(1);
+  }
+  /* USER CODE END 5 */ 
 }
 //void echo_2(void)
 //{
