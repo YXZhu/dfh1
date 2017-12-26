@@ -31,8 +31,8 @@ int32_t setSPA,setSPB; //设置目标电机速度值
 //	}
 //}
 
-#define TurnSpeed 3500
-#define MiniDis 135
+#define TurnSpeed 4000
+#define MiniDis 145
 #define MaxDis  160
 
 int16_t angle_temp1 = 0,angle_temp2 = 0,angle_temp3 = 0,angle_temp4=0,angle_time = 0;
@@ -619,7 +619,7 @@ void bztask(void const * argument)
 			  }
 			  HAL_GPIO_WritePin(ENA2_GPIO_Port,ENA2_Pin|ENB2_Pin,GPIO_PIN_RESET);
 			  
-            setSPEED = 7000;
+            setSPEED = 9999;
 			   speed = setSPEED;
 				vTaskResume(main_1Handle);
 			   vTaskResume(moto_jzHandle);				
@@ -629,7 +629,7 @@ void bztask(void const * argument)
 			switch(bzbjs_1)
 			{
 				case 0 :
-				    setSPEED = 7000;
+				    setSPEED = 9999;
 				    speed = setSPEED;
 				break;
 				case 1 :

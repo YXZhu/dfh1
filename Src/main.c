@@ -817,13 +817,13 @@ int32_t setSPEED,speed;
 uint8_t setangle,angleJS,motofrontorturn,setfangx = 0;//前后
 extern int16_t ReadDisA,ReadDisB;
 
-#define LowSpeed 3000
-#define TurnDis 140
+#define LowSpeed 4000
+#define TurnDis 160
 #define LowDis 400
 #define ChangeDis 300 //距离变化最大值
 #define TurnTime 5
 
-#define Turnworkdis 370 //检测转弯后继续行走距离
+#define Turnworkdis 340 //检测转弯后继续行走距离
 
 #define frontJ 1
 #define backJ 2
@@ -837,7 +837,7 @@ void main_1task(void const * argument)
 	//setangle = 0;
 	angleJS = 0;
 	motofrontorturn = 0;
-	setSPEED = 7000;
+	setSPEED = 9999;
 	osDelay(1000);
 	vTaskSuspend(mpuHandle);
 	//HAL_GPIO_WritePin(GPIOG, GPIO_PIN_15,GPIO_PIN_SET);
