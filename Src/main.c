@@ -67,7 +67,6 @@ I2C_HandleTypeDef hi2c2;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
-TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim8;
 TIM_HandleTypeDef htim9;
@@ -109,7 +108,6 @@ static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_USART2_UART_Init(void);
-static void MX_TIM3_Init(void);
 static void MX_TIM9_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM8_Init(void);
@@ -135,14 +133,13 @@ extern void Echo_3task(void const * argument);
 extern void Echo_4task(void const * argument);
 extern void Echo_5task(void const * argument);
 extern void Echo_6task(void const * argument);
- void startinittask(void const * argument);
- void main_1task(void const * argument);
- void moto_jztask(void const * argument);
- extern void moto_controltask(void const * argument);
- extern void mputask(void const * argument);
- void Testtask(void const * argument);
- extern void bztask(void const * argument);
- 
+void startinittask(void const * argument);
+void main_1task(void const * argument);
+void moto_jztask(void const * argument);
+extern void moto_controltask(void const * argument);
+extern void mputask(void const * argument);
+void Testtask(void const * argument);
+extern void bztask(void const * argument);
 /* USER CODE END 0 */
 
 int main(void)
@@ -176,7 +173,6 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM4_Init();
   MX_USART2_UART_Init();
-  MX_TIM3_Init();
   MX_TIM9_Init();
   MX_USART3_UART_Init();
   MX_TIM8_Init();
@@ -186,8 +182,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
    HAL_TIM_PWM_Start(&htim9,TIM_CHANNEL_1);
    HAL_TIM_PWM_Start(&htim9,TIM_CHANNEL_2);
-	HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_1);
-	TIM3->CCR1 = 500;
 	HAL_TIM_Base_Start_IT(&htim1);
    HAL_TIM_Base_Start_IT(&htim2);
 	HAL_TIM_IC_Start_IT(&htim1,TIM_CHANNEL_1);
@@ -201,11 +195,11 @@ int main(void)
 	HAL_TIM_Encoder_Start(&htim4,TIM_CHANNEL_2);
 	HAL_TIM_Encoder_Start(&htim8,TIM_CHANNEL_1);
 	HAL_TIM_Encoder_Start(&htim8,TIM_CHANNEL_2);
-	 GPIO_InitTypeDef GPIO_InitStruct;
-	 GPIO_InitStruct.Pin = GPIO_PIN_15;      //此行原有
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;   //GPIO配置为输出
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;         //强上拉
-    HAL_GPIO_Init(GPIOG,&GPIO_InitStruct);
+//	 GPIO_InitTypeDef GPIO_InitStruct;
+//	 GPIO_InitStruct.Pin = GPIO_PIN_15;      //此行原有
+//    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;   //GPIO配置为输出
+//    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;         //强上拉
+//    HAL_GPIO_Init(GPIOG,&GPIO_InitStruct);
 	 //UDelayUS(100000);
 	// HAL_GPIO_WritePin(GPIOG, GPIO_PIN_15,GPIO_PIN_SET);
 	//HAL_Delay(2000);
@@ -233,7 +227,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* definition and creation of Echo_1 */ 
-  osThreadDef(main_1, main_1task, osPriorityRealtime, 0, 128);
+  osThreadDef(main_1, main_1task, osPriorityRealtime, 0, 256);
   main_1Handle = osThreadCreate(osThread(main_1), NULL);
   
   osThreadDef(Echo_1, Echo_1task, osPriorityRealtime, 0, 128);
@@ -265,7 +259,7 @@ int main(void)
   osThreadDef(moto_jz, moto_jztask, osPriorityRealtime, 0, 128);
   moto_jzHandle = osThreadCreate(osThread(moto_jz), NULL);
 
-	osThreadDef(bz, bztask, osPriorityRealtime, 0, 128);  //要调
+	osThreadDef(bz, bztask, osPriorityRealtime, 0,128);  //要调
 	bzHandle = osThreadCreate(osThread(bz), NULL);
   /* definition and creation of Echo_5 */
 
@@ -511,55 +505,6 @@ static void MX_TIM2_Init(void)
 
 }
 
-/* TIM3 init function */
-static void MX_TIM3_Init(void)
-{
-
-  TIM_ClockConfigTypeDef sClockSourceConfig;
-  TIM_MasterConfigTypeDef sMasterConfig;
-  TIM_OC_InitTypeDef sConfigOC;
-
-  htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 84-1;
-  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 20000-1;
-  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-  HAL_TIM_MspPostInit(&htim3);
-
-}
-
 /* TIM4 init function */
 static void MX_TIM4_Init(void)
 {
@@ -762,22 +707,23 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOG, Trig_1_Pin|Trig_2_Pin|Trig_3_Pin|Trig_4_Pin 
-                          |Trig_5_Pin|Trig_6_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOG, Trig_5_Pin|Trig_1_Pin|Trig_2_Pin|Trig_3_Pin 
+                          |Trig_4_Pin|Trig_6_Pin|D_Pin|C_Pin 
+                          |B_Pin|A_Pin|ENB2_Pin|ENA2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, N1_Pin|N2_Pin|N3_Pin|N4_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : HW_1_Pin HW_2_Pin */
-  GPIO_InitStruct.Pin = HW_1_Pin|HW_2_Pin;
+  /*Configure GPIO pin : HW_1_Pin */
+  GPIO_InitStruct.Pin = HW_1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(HW_1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Trig_1_Pin Trig_2_Pin Trig_3_Pin Trig_4_Pin 
-                           Trig_5_Pin Trig_6_Pin */
-  GPIO_InitStruct.Pin = Trig_1_Pin|Trig_2_Pin|Trig_3_Pin|Trig_4_Pin 
-                          |Trig_5_Pin|Trig_6_Pin;
+  /*Configure GPIO pins : Trig_5_Pin Trig_1_Pin Trig_2_Pin Trig_3_Pin 
+                           Trig_4_Pin Trig_6_Pin */
+  GPIO_InitStruct.Pin = Trig_5_Pin|Trig_1_Pin|Trig_2_Pin|Trig_3_Pin 
+                          |Trig_4_Pin|Trig_6_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
@@ -795,6 +741,15 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : D_Pin C_Pin B_Pin A_Pin 
+                           ENB2_Pin ENA2_Pin */
+  GPIO_InitStruct.Pin = D_Pin|C_Pin|B_Pin|A_Pin 
+                          |ENB2_Pin|ENA2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
 }
 
@@ -857,17 +812,19 @@ void startinittask(void const * argument)
   }
 }
 
-
 extern int32_t setSPA,setSPB;
 int32_t setSPEED,speed;
-uint8_t setangle,angleJS,motofrontorturn;//前后
+uint8_t setangle,angleJS,motofrontorturn,setfangx = 0;//前后
 extern int16_t ReadDisA,ReadDisB;
 
 #define LowSpeed 3000
-#define TurnDis 160
+#define TurnDis 140
 #define LowDis 400
 #define ChangeDis 300 //距离变化最大值
 #define TurnTime 5
+
+#define Turnworkdis 370 //检测转弯后继续行走距离
+
 #define frontJ 1
 #define backJ 2
 #define front 5
@@ -877,13 +834,13 @@ extern int16_t ReadDisA,ReadDisB;
 
 void main_1task(void const * argument)
 {
-	setangle = 0;
-	angleJS = 5;
+	//setangle = 0;
+	angleJS = 0;
 	motofrontorturn = 0;
-	setSPEED = 8000;
+	setSPEED = 7000;
 	osDelay(1000);
 	vTaskSuspend(mpuHandle);
-	HAL_GPIO_WritePin(GPIOG, GPIO_PIN_15,GPIO_PIN_SET);
+	//HAL_GPIO_WritePin(GPIOG, GPIO_PIN_15,GPIO_PIN_SET);
 	TickType_t xLastWakeTime;
 	const TickType_t xFrequency = 5;
 	xLastWakeTime = xTaskGetTickCount();
@@ -921,7 +878,7 @@ void main_1task(void const * argument)
 							{
 								moto_control1 = right;
 								vTaskSuspend(main_1Handle);
-								angleJS = front;
+								angleJS = 1;
 							}
 						}
 					}
@@ -975,7 +932,7 @@ void main_1task(void const * argument)
                if(EDjl5 > ChangeDis)
 					{
 						moto_control1 = 0;
-						moto_frontDis(600,600,LowSpeed);
+						moto_frontDis(Turnworkdis,Turnworkdis,LowSpeed);
 						moto_control1 = left;
 						vTaskSuspend(main_1Handle);
 						angleJS = 3;
@@ -1045,7 +1002,7 @@ void main_1task(void const * argument)
                if(EDjl4 > ChangeDis)
 					{
 						moto_control1 = 0;
-						moto_backDis(600,600,LowSpeed);
+						moto_backDis(Turnworkdis,Turnworkdis,LowSpeed);
 						moto_control1 = right;
 						vTaskSuspend(main_1Handle);
 						angleJS = 5;
@@ -1082,6 +1039,7 @@ void main_1task(void const * argument)
 								moto_control1 = right;
 								vTaskSuspend(main_1Handle);
 								angleJS = 6;
+								
 							}
 						}
 						else
@@ -1093,14 +1051,157 @@ void main_1task(void const * argument)
 				}
 			}
 			break;
+//			case 6:
+//			{
+//            setfangx ++;
+// 				if(setfangx == 2) angleJS = 7;
+//				else angleJS = 2;
+//			}
+//	      break;
 			case 6:
 			{
-            setangle ++;
- 				if(setangle == 2) angleJS = 7;
-				else angleJS = 2;
+				do
+				{
+					moto_control1 = frontJ;
+					speed = setSPEED;					
+					osDelayUntil(&xLastWakeTime, xFrequency);	
+				}					
+				while(EDjl4 > ChangeDis);
+				while(EDjl4 < ChangeDis)
+				{
+					moto_control1 = frontJ;
+					speed = setSPEED;					
+					osDelayUntil(&xLastWakeTime, xFrequency);	
+				}						
+				while(EDjl4 > ChangeDis)
+				{
+					moto_control1 = frontJ;
+					speed = LowSpeed;	
+               if(EDjl5 > ChangeDis)
+					{
+						moto_control1 = 0;
+						moto_frontDis(Turnworkdis,Turnworkdis,LowSpeed);
+						moto_control1 = left;
+						vTaskSuspend(main_1Handle);
+						angleJS = 7;
+						break;
+						//goto s;
+					}
+					osDelayUntil(&xLastWakeTime, xFrequency);
+				}
+				
 			}
 	      break;
 			case 7:
+			{
+				if(EDjl6 > LowDis)
+				{
+					if(EDjl3 > ChangeDis)
+					{
+						moto_control1 = back;
+						speed = setSPEED;
+					}
+					else
+					{
+						moto_control1 = backJ;
+						speed = setSPEED;
+					}
+				}
+				else
+				{
+					if(EDjl5 > ChangeDis)
+					{
+						if(EDjl6 < TurnDis)
+						{
+							if(EDjl4 > ChangeDis)
+							{
+
+								moto_control1 = left;
+								vTaskSuspend(main_1Handle);
+								angleJS = 8;
+							}
+						}
+						else
+						{
+							moto_control1 = back;
+							speed = LowSpeed;
+						}
+					}
+				}
+			}
+			break;
+			case 8:
+			{
+				do
+				{
+					moto_control1 = backJ;
+					speed = setSPEED;					
+					osDelayUntil(&xLastWakeTime, xFrequency);	
+				}					
+				while(EDjl5 > ChangeDis);
+				while(EDjl5 < ChangeDis)
+				{
+					moto_control1 = backJ;
+					speed = setSPEED;					
+					osDelayUntil(&xLastWakeTime, xFrequency);	
+				}						
+				while(EDjl5 > ChangeDis)
+				{
+					moto_control1 = backJ;
+					speed = LowSpeed;	
+               if(EDjl4 > ChangeDis)
+					{
+						moto_control1 = 0;
+						moto_backDis(Turnworkdis,Turnworkdis,LowSpeed);
+						moto_control1 = right;
+						vTaskSuspend(main_1Handle);
+						angleJS = 9;
+						break;
+					}
+					osDelayUntil(&xLastWakeTime, xFrequency);
+				}
+			}
+	      break;
+			case 9:
+			{
+				if(EDjl1 > LowDis)
+				{
+					if(EDjl2 > ChangeDis)
+					{
+						moto_control1 = front;
+						speed = setSPEED;
+					}
+					else
+					{
+						moto_control1 = frontJ;
+						speed = setSPEED;
+					}
+				}
+				else
+				{
+					if(EDjl4 > ChangeDis)
+					{
+						if(EDjl1 < TurnDis)
+						{
+							if(EDjl5 > ChangeDis)
+							{
+
+								moto_control1 = right;
+								vTaskSuspend(main_1Handle);
+								angleJS = 10;
+								
+							}
+						}
+						else
+						{
+							moto_control1 = front;
+							speed = LowSpeed;
+						}
+					}
+				}
+			}
+			break;
+			case 10:
 			{
 				do
 				{
@@ -1123,14 +1224,14 @@ void main_1task(void const * argument)
 					{
 						moto_control1 = right;
 						vTaskSuspend(main_1Handle);
-						angleJS = 8;
+						angleJS = 11;
 						break;
 					}
 					osDelayUntil(&xLastWakeTime, xFrequency);
 				}
 			}
 			break;
-			case 8:
+			case 11:
 			{
 				if(EDjl1>LowDis)
 				{
@@ -1140,22 +1241,23 @@ void main_1task(void const * argument)
 				else 
 				{
 					speed = LowSpeed;
+					moto_control1 = front;
 					 if(EDjl4 > ChangeDis)
 					 {
-						 if(EDjl5 > ChangeDis)
-						 {
+						// if(EDjl5 > ChangeDis)
+						 //{
 							 if(EDjl1 < TurnDis)
 							{
 								moto_control1 = right;
 								vTaskSuspend(main_1Handle);
-								angleJS = 9;
+								angleJS = 12;
 							}
-						}
+						//}
 					}
 				}						 
 			}
 			break;
-			case 9:
+			case 12:
 			{
 				if(EDjl2 < ChangeDis)
 				{
@@ -1166,7 +1268,7 @@ void main_1task(void const * argument)
 				{
 					moto_control1 = 0;
 					moto_stop();
-					angleJS = 10;
+					angleJS = 14;
 				}
 			}
 			break;
@@ -1592,7 +1694,6 @@ void StartDefaultTask(void const * argument)
 
   for(;;)
   {
-	   //echo_2();
 		osDelay(1);
   }
   /* USER CODE END 5 */ 

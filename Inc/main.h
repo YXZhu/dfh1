@@ -60,12 +60,8 @@
 #define ENA_GPIO_Port GPIOE
 #define ENB_Pin GPIO_PIN_6
 #define ENB_GPIO_Port GPIOE
-#define DJ_pwm_Pin GPIO_PIN_6
-#define DJ_pwm_GPIO_Port GPIOA
-#define HW_1_Pin GPIO_PIN_0
+#define HW_1_Pin GPIO_PIN_4
 #define HW_1_GPIO_Port GPIOB
-#define HW_2_Pin GPIO_PIN_1
-#define HW_2_GPIO_Port GPIOB
 #define Echo_1_Pin GPIO_PIN_9
 #define Echo_1_GPIO_Port GPIOE
 #define Echo_2_Pin GPIO_PIN_11
@@ -82,6 +78,8 @@
 #define SPDB_2_GPIO_Port GPIOD
 #define SPDB_1_Pin GPIO_PIN_13
 #define SPDB_1_GPIO_Port GPIOD
+#define Trig_5_Pin GPIO_PIN_2
+#define Trig_5_GPIO_Port GPIOG
 #define Trig_1_Pin GPIO_PIN_3
 #define Trig_1_GPIO_Port GPIOG
 #define Trig_2_Pin GPIO_PIN_4
@@ -90,8 +88,6 @@
 #define Trig_3_GPIO_Port GPIOG
 #define Trig_4_Pin GPIO_PIN_6
 #define Trig_4_GPIO_Port GPIOG
-#define Trig_5_Pin GPIO_PIN_2
-#define Trig_5_GPIO_Port GPIOG
 #define Trig_6_Pin GPIO_PIN_8
 #define Trig_6_GPIO_Port GPIOG
 #define SPDA_2_Pin GPIO_PIN_6
@@ -108,6 +104,18 @@
 #define N3_GPIO_Port GPIOD
 #define N4_Pin GPIO_PIN_4
 #define N4_GPIO_Port GPIOD
+#define D_Pin GPIO_PIN_10
+#define D_GPIO_Port GPIOG
+#define C_Pin GPIO_PIN_11
+#define C_GPIO_Port GPIOG
+#define B_Pin GPIO_PIN_12
+#define B_GPIO_Port GPIOG
+#define A_Pin GPIO_PIN_13
+#define A_GPIO_Port GPIOG
+#define ENB2_Pin GPIO_PIN_14
+#define ENB2_GPIO_Port GPIOG
+#define ENA2_Pin GPIO_PIN_9
+#define ENA2_GPIO_Port GPIOG
 
 /* USER CODE BEGIN Private defines */
 

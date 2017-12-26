@@ -31,8 +31,8 @@ int32_t setSPA,setSPB; //设置目标电机速度值
 //	}
 //}
 
-#define TurnSpeed 3000
-#define MiniDis 130
+#define TurnSpeed 3500
+#define MiniDis 135
 #define MaxDis  160
 
 int16_t angle_temp1 = 0,angle_temp2 = 0,angle_temp3 = 0,angle_temp4=0,angle_time = 0;
@@ -59,9 +59,9 @@ int16_t moto_angle(unsigned char SF,int16_t setangle,unsigned char a)
 		}
 		if(angle_temp2>18000) angle_temp2 = -36000 + angle_temp2;
 		if(angle_temp2<-18000) angle_temp2 = 36000 + angle_temp2;
-		angle_temp3 = angle_temp2 + 100;
+		angle_temp3 = angle_temp2 + 150;
 		if(angle_temp3>18000) angle_temp3 = -36000 + angle_temp3;
-		angle_temp4 = angle_temp2 - 100;
+		angle_temp4 = angle_temp2 - 150;
 		if(angle_temp4<-18000) angle_temp4 = angle_temp4 + 36000;
 	}
 	if(SF == 1)
@@ -211,7 +211,7 @@ void moto_frontDis(int16_t setDisA,int16_t setDisB,int32_t speed1)
 {
 
 	TickType_t xLastWakeTime;
-	const TickType_t xFrequency = 10;
+	const TickType_t xFrequency = 5;
 	xLastWakeTime = xTaskGetTickCount();
 	ReadDisA = 0;
 	ReadDisB = 0;
@@ -287,8 +287,9 @@ extern osThreadId Echo_1Handle;
 void moto_jztask(void const * argument)
 {
 	TickType_t xLastWakeTime;
-	const TickType_t xFrequency = 10;
-	const TickType_t xFrequency1 = 8;
+	const TickType_t xFrequency = 5;
+	const TickType_t xFrequency1 = 5;
+	const TickType_t xFrequency2 = 120;
 	xLastWakeTime = xTaskGetTickCount();
 	moto_control1 = 0;
 	//speed = 9990;
@@ -304,12 +305,12 @@ void moto_jztask(void const * argument)
 				{
 						moto_front();
 						setSPA = speed;
-						setSPB = speed/2;
+						setSPB = (speed/2)-1500;
 				}
 				else if(EDjl2>MaxDis)
 				{	
 					 moto_front();
-					 setSPA = speed/2;
+					 setSPA = (speed/2)-1500;
 					 setSPB = speed;			
 				}
 				else
@@ -341,13 +342,13 @@ void moto_jztask(void const * argument)
 					//{
 						moto_back();
 						setSPA = speed;
-						setSPB = speed/2;
+						setSPB = (speed/2)-1500;
 					//}
 				}
 				else if(EDjl3>MaxDis)
 				{	
 					   moto_back();
-						setSPA = speed/2;
+						setSPA = (speed/2)-1500;
 						setSPB = speed;			
 				}
 				else
@@ -377,7 +378,7 @@ void moto_jztask(void const * argument)
 				vTaskResume(mpuHandle);
 			   vTaskSuspend(bzHandle);
 				moto_stop();
-			   osDelay(160);
+			   osDelayUntil(&xLastWakeTime, xFrequency2);
            // vTaskSuspend(moto_controlHandle);
 			   //TIM9->CCR1 = 5000;
 				//TIM9->CCR2 = 5000;
@@ -394,7 +395,7 @@ void moto_jztask(void const * argument)
 						//vTaskResume(moto_controlHandle);
 						vTaskSuspend(mpuHandle);
 						vTaskResume(Echo_1Handle);
-						osDelay(120);
+						osDelayUntil(&xLastWakeTime, xFrequency2);
 						vTaskResume(bzHandle);
 						vTaskResume(main_1Handle);
 				
@@ -406,7 +407,7 @@ void moto_jztask(void const * argument)
 				vTaskResume(mpuHandle);
 				vTaskSuspend(bzHandle);
 				moto_stop();
-			   osDelay(160);     			
+			   osDelayUntil(&xLastWakeTime, xFrequency2);     			
 					while(moto_angle(0,9000,1) != HAL_OK)
 					{
 						osDelayUntil(&xLastWakeTime,xFrequency1);
@@ -419,7 +420,7 @@ void moto_jztask(void const * argument)
 						//vTaskResume(moto_controlHandle);
 						vTaskSuspend(mpuHandle);
 						vTaskResume(Echo_1Handle);
-						osDelay(120);
+						osDelayUntil(&xLastWakeTime, xFrequency2);
 						vTaskResume(bzHandle);
 						vTaskResume(main_1Handle);
 				
@@ -443,194 +444,212 @@ void moto_jztask(void const * argument)
 	}
 		
 }
-extern uint8_t setangle,angleJS;
 
-
+extern uint8_t angleJS;
 void bztask(void const * argument)
 {
-	uint8_t swdj_1,swdj_2,bzjs,bzbjs_1,bzbjs_2,swjs_1,swjs_2,swjs_3,swjs_4;
+	TickType_t xLastWakeTime;
+	const TickType_t xFrequency = 1;
+	const TickType_t xFrequency1 = 5;
+	const TickType_t xFrequency2 = 10;
+	const TickType_t xFrequency3 = 1000;
+	const TickType_t xFrequency4 = 2;
+	xLastWakeTime = xTaskGetTickCount();
+	uint8_t swdj_1,bzbjs_1,swjs_1,swjs_3;
 	swjs_1 = 0;
-	swjs_2 = 0;
 	swjs_3 = 0;
-	swjs_4 = 0;
 	bzbjs_1 = 0;
-	bzbjs_2 = 0;
-	bzjs = 0;
 	swdj_1 = 1;
-	swdj_2 = 1;
-	uint16_t pwm[] = {500,612,746,869,1001,1168,1335,1491,1658,1825,1992,2159};
+//	setSPEED = 8000;
+//	speed = setSPEED;
+//	angleJS = 6;
+	HAL_GPIO_WritePin(ENA2_GPIO_Port,ENA2_Pin|ENB2_Pin,GPIO_PIN_RESET);
 	for(;;)
 	{
-//		 if(HAL_GPIO_ReadPin(HW_1_GPIO_Port,HW_1_Pin) == 1)
-//		{
-//			osDelay(2);
-//			if(HAL_GPIO_ReadPin(HW_1_GPIO_Port,HW_1_Pin) == 1)
-//			{
-//				 if(swdj_1 == 0)
-//				 {
-//					swdj_1 = 1;
-//					 bzbjs_1++;
-//					 swjs_1 = 0;
-//					 swjs_3 = 0;
-//		//			 if(bzbjs_1 == 4) 
-//		//			 {
-//		//				 
-//		//				 bzjs++;
-//		//				 TIM3->CCR1 = pwm[bzjs];
-//		//				 vTaskSuspend(main_1Handle);
-//		//				 vTaskSuspend(moto_jzHandle);
-//		//				 moto_stop();
-//		//				 osDelay(1000);
-//		//				 vTaskResume(main_1Handle);
-//		//				 vTaskResume(moto_jzHandle);
-//		//			 }	 
-//						 
-//				 }
-//							
-//			}
-//			if(swjs_3>20) bzbjs_1 = 0;
-//			else swjs_3++;	
-//		}
-//		else
-//		{
-//			swdj_1 = 0;			
-//			if(swjs_1>60) bzbjs_1 = 0;
-//			else swjs_1++;				
-//		}
-//		if(HAL_GPIO_ReadPin(HW_2_GPIO_Port,HW_2_Pin) == 1)
-//		{
-//			osDelay(2);
-//			if(HAL_GPIO_ReadPin(HW_2_GPIO_Port,HW_2_Pin) == 1)
-//		  {
-//				if(swdj_2 == 0)
-//				{
-//					swdj_2 = 1;
-//					bzbjs_2 ++;
-//					swjs_2 = 0;
-//					swjs_4 = 0;
-//				}
-//				if(swjs_4>20) bzbjs_2 = 0;
-//			   else swjs_4++;	
-//			}
-
-//		}
-//		else
-//		{
-//			swdj_2 = 0;
-//			if(swjs_2>60) bzbjs_2 = 0;
-//			else swjs_2++;	
-//		}	
-//     if(angleJS >= 1)
-//	  {
-//		  while(angleJS >= 10)
-//		  {
-//			  osDelay(1);
-//		  }
-//		  if(setangle == 1)
-//		  {
-//			if(bzbjs_1 == 3)
-//			{
-//				bzjs++;
-//				bzbjs_2 = 0;
-//				bzbjs_1 = 0;
-//				vTaskSuspend(main_1Handle);
-//				vTaskSuspend(moto_jzHandle);
-//				vTaskSuspend(moto_controlHandle);
-//				setSPEED = 7000;
-//				TIM9->CCR1 = 8000;
-//				TIM9->CCR2 = 8000;
-
-//				moto_back();
-//				//osDelay(150);
-//				UDelayUS(50000);
-//				moto_stop();
-//				
-//				TIM3->CCR1 = pwm[bzjs];
-//				osDelay(1200);
-//				moto_front();
-
-//				vTaskResume(main_1Handle);
-//				vTaskResume(moto_jzHandle);
-//				vTaskResume(moto_controlHandle);
-//				osDelay(600);
-//			}
-//			switch(bzbjs_2)
-//			{
-//				case 0 :
-//				    setSPEED = 7000;
-//				break;
-//				case 1 :
-//			      setSPEED = 3000;
-//				break;
-//				case 2:
-//					setSPEED = 1500;
-//				break;
-//				case 3:
-//					setSPEED = 0;
-//				break;
-//			}
-//		 }
-//		  else
-//		  {
-//			if(bzbjs_2 == 3)
-//			{
-//				bzjs++;
-//				bzbjs_2 = 0;
-//				bzbjs_1 = 0;
-//				vTaskSuspend(main_1Handle);
-//				vTaskSuspend(moto_jzHandle);
-//				vTaskSuspend(moto_controlHandle);
-//				setSPEED = 7000;
-//				TIM9->CCR1 = 9000;
-//				TIM9->CCR2 = 9000;
-
-//				moto_front();
-//				//osDelay(150);
-//				UDelayUS(50000);
-//				moto_stop();
-//				
-//				TIM3->CCR1 = pwm[bzjs];
-//				osDelay(1200);
-//				moto_back();
-
-//				vTaskResume(main_1Handle);
-//				vTaskResume(moto_jzHandle);
-//				vTaskResume(moto_controlHandle);
-//				osDelay(600);
-//			}
-//			switch(bzbjs_1)
-//			{
-//				case 0 :
-//				    setSPEED = 7000;
-//				break;
-//				case 1 :
-//			      setSPEED = 3000;
-//				break;
-//				case 2:
-//					setSPEED = 1500;
-//				break;
-//				case 3:
-//					setSPEED = 0;
-//				break;
-//			}
-//		}
-//	}
-////		if(bzbjs_2 ==1)
-////		{
-
-////		}
-////		if(bzbjs_2 == 2)
-////		{
-////			setSPEEDA = 3000;
-////			setSPEEDB = 3000;
-////		}
-////		if(bzbjs_2 == 3)
-////		{
-////			setSPEEDA = 1000;
-////			setSPEEDB = 1000;
-////		}
 //		
-   	osDelay(5);
+//		if(HAL_GPIO_ReadPin(HW_1_GPIO_Port,HW_1_Pin)==GPIO_PIN_RESET)
+//		{
+//		HAL_GPIO_WritePin(ENA2_GPIO_Port,ENA2_Pin|ENB2_Pin,GPIO_PIN_SET);
+//		for (uint16_t j=0; j<2; j++) 
+//	  {
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|D_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,C_Pin|B_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency1);		  
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,D_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|B_Pin|C_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency1);			  
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,D_Pin|C_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|B_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency1);		  
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,C_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|B_Pin|D_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency1);			  
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin|C_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|D_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency1);		  
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|C_Pin|D_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency1);	
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin|A_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,C_Pin|D_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency1);	
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin|C_Pin|D_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency1);	
+//	  }
+//	  for (uint16_t j=0; j<43-2; j++) //0.703125 * 42
+//	  {
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|D_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,C_Pin|B_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency);			  
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,D_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|B_Pin|C_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency);			  
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,D_Pin|C_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|B_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency);			  
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,C_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|B_Pin|D_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency);			  
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin|C_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|D_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency);			  
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|C_Pin|D_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin|A_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,C_Pin|D_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency);			  
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin,GPIO_PIN_SET);
+//		  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin|C_Pin|D_Pin,GPIO_PIN_RESET);
+//		  osDelayUntil(&xLastWakeTime, xFrequency);
+//	  }
+//	  HAL_GPIO_WritePin(ENA2_GPIO_Port,ENA2_Pin|ENB2_Pin,GPIO_PIN_RESET);
+//     }
+		 if(HAL_GPIO_ReadPin(HW_1_GPIO_Port,HW_1_Pin) == 1)
+		{
+			osDelayUntil(&xLastWakeTime, xFrequency4);
+			if(HAL_GPIO_ReadPin(HW_1_GPIO_Port,HW_1_Pin) == 1)
+			{
+				 if(swdj_1 == 0)
+				 {
+					swdj_1 = 1;
+					 bzbjs_1++;
+					 swjs_1 = 0;
+					 swjs_3 = 0; 	 
+				 }
+							
+			}
+			if(swjs_3>20) bzbjs_1 = 0;
+			else swjs_3++;	
+		}
+		else
+		{
+			swdj_1 = 0;			
+			if(swjs_1>80) bzbjs_1 = 0;
+			else swjs_1++;				
+		}
+     if(angleJS >= 1)
+	  {
+		  while(angleJS >= 10)
+		  {
+			  osDelayUntil(&xLastWakeTime, xFrequency3);
+		  }
+			if(bzbjs_1 == 3)
+			{
+				bzbjs_1 = 0;
+				vTaskSuspend(main_1Handle);
+				vTaskSuspend(moto_jzHandle);
+				vTaskSuspend(moto_controlHandle);
+				moto_stop();			
+				HAL_GPIO_WritePin(ENA2_GPIO_Port,ENA2_Pin|ENB2_Pin,GPIO_PIN_SET);
+				for (uint16_t j=0; j<2; j++) 
+			  {
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|D_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,C_Pin|B_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency1);		  
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,D_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|B_Pin|C_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency1);			  
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,D_Pin|C_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|B_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency1);		  
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,C_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|B_Pin|D_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency1);			  
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin|C_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|D_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency1);		  
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|C_Pin|D_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency1);	
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin|A_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,C_Pin|D_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency1);	
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin|C_Pin|D_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency1);	
+			  }
+			  for (uint16_t j=0; j<43-2; j++) //0.703125 * 42
+			  {
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|D_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,C_Pin|B_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency);			  
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,D_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|B_Pin|C_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency);			  
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,D_Pin|C_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|B_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency);			  
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,C_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|B_Pin|D_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency);			  
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin|C_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|D_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency);			  
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin|C_Pin|D_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin|A_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,C_Pin|D_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency);			  
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,A_Pin,GPIO_PIN_SET);
+				  HAL_GPIO_WritePin(ENA2_GPIO_Port,B_Pin|C_Pin|D_Pin,GPIO_PIN_RESET);
+				  osDelayUntil(&xLastWakeTime, xFrequency);
+			  }
+			  HAL_GPIO_WritePin(ENA2_GPIO_Port,ENA2_Pin|ENB2_Pin,GPIO_PIN_RESET);
+			  
+            setSPEED = 7000;
+			   speed = setSPEED;
+				vTaskResume(main_1Handle);
+			   vTaskResume(moto_jzHandle);				
+				vTaskResume(moto_controlHandle);
+				osDelayUntil(&xLastWakeTime, xFrequency3);
+			}
+			switch(bzbjs_1)
+			{
+				case 0 :
+				    setSPEED = 7000;
+				    speed = setSPEED;
+				break;
+				case 1 :
+			      setSPEED = 7000;
+				   speed = setSPEED;
+				break;
+				case 2:
+					setSPEED = 5000;
+				   speed = setSPEED;
+				break;
+				case 3:
+					setSPEED = 0;
+				   speed = setSPEED;
+				break;
+				default:break;
+			}
+		
+		
+	}
+   	osDelayUntil(&xLastWakeTime, xFrequency2);
 	}
 }
 extern UART_HandleTypeDef huart3;

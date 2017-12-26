@@ -29,7 +29,7 @@ void mputask(void const * argument)
 			HAL_UART_DMAStop(&huart2);
 			HAL_UART_Receive_DMA(&huart2, mpurebuf,8); 
 			mpurebuf[0]=0;
-			 HAL_GPIO_WritePin(GPIOG, GPIO_PIN_15,GPIO_PIN_SET);
+			// HAL_GPIO_WritePin(GPIOG, GPIO_PIN_15,GPIO_PIN_SET);
 		 }
 		 else
 		 {
@@ -38,7 +38,7 @@ void mputask(void const * argument)
 			 YAW=(mpurebuf[1]<<8|mpurebuf[2]);//YAW，PITCH,ROLL为真实值的100倍
 			 //PITCH=(mpurebuf[3]<<8|mpurebuf[4]);
 			// ROLL=(mpurebuf[5]<<8|mpurebuf[6]);
-		    HAL_GPIO_WritePin(GPIOG, GPIO_PIN_15,GPIO_PIN_RESET);
+		    //HAL_GPIO_WritePin(GPIOG, GPIO_PIN_15,GPIO_PIN_RESET);
 		   }
 		}
 

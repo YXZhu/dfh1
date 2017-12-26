@@ -24,7 +24,7 @@ void UDelayUS (unsigned int ulCount)
 	}	
 }
 
-#define EchoTime 9
+#define EchoTime 20
 void Echo_Init(void)
 {
 
