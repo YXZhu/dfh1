@@ -31,8 +31,12 @@ int32_t setSPA,setSPB; //设置目标电机速度值
 //	}
 //}
 
-#define TurnSpeed 4000
-#define MiniDis 145
+#define TurnSpeed 3500
+<<<<<<< HEAD
+#define MiniDis 140
+=======
+#define MiniDis 135
+>>>>>>> parent of 415e836... 淇敼3
 #define MaxDis  160
 
 int16_t angle_temp1 = 0,angle_temp2 = 0,angle_temp3 = 0,angle_temp4=0,angle_time = 0;
@@ -59,9 +63,9 @@ int16_t moto_angle(unsigned char SF,int16_t setangle,unsigned char a)
 		}
 		if(angle_temp2>18000) angle_temp2 = -36000 + angle_temp2;
 		if(angle_temp2<-18000) angle_temp2 = 36000 + angle_temp2;
-		angle_temp3 = angle_temp2 + 150;
+		angle_temp3 = angle_temp2 + 100;
 		if(angle_temp3>18000) angle_temp3 = -36000 + angle_temp3;
-		angle_temp4 = angle_temp2 - 150;
+		angle_temp4 = angle_temp2 - 100;
 		if(angle_temp4<-18000) angle_temp4 = angle_temp4 + 36000;
 	}
 	if(SF == 1)
@@ -305,12 +309,12 @@ void moto_jztask(void const * argument)
 				{
 						moto_front();
 						setSPA = speed;
-						setSPB = (speed/2)-1500;
+						setSPB = (speed/2);
 				}
 				else if(EDjl2>MaxDis)
 				{	
 					 moto_front();
-					 setSPA = (speed/2)-1500;
+					 setSPA = (speed/2);
 					 setSPB = speed;			
 				}
 				else
@@ -342,13 +346,13 @@ void moto_jztask(void const * argument)
 					//{
 						moto_back();
 						setSPA = speed;
-						setSPB = (speed/2)-1500;
+						setSPB = (speed/2);
 					//}
 				}
 				else if(EDjl3>MaxDis)
 				{	
 					   moto_back();
-						setSPA = (speed/2)-1500;
+						setSPA = (speed/2);
 						setSPB = speed;			
 				}
 				else
@@ -619,7 +623,7 @@ void bztask(void const * argument)
 			  }
 			  HAL_GPIO_WritePin(ENA2_GPIO_Port,ENA2_Pin|ENB2_Pin,GPIO_PIN_RESET);
 			  
-            setSPEED = 9999;
+            setSPEED = 7000;
 			   speed = setSPEED;
 				vTaskResume(main_1Handle);
 			   vTaskResume(moto_jzHandle);				
@@ -629,15 +633,15 @@ void bztask(void const * argument)
 			switch(bzbjs_1)
 			{
 				case 0 :
-				    setSPEED = 9999;
+				    setSPEED = 7000;
 				    speed = setSPEED;
 				break;
 				case 1 :
-			      setSPEED = 7000;
+			      setSPEED = 2500;
 				   speed = setSPEED;
 				break;
 				case 2:
-					setSPEED = 5000;
+					setSPEED = 3000;
 				   speed = setSPEED;
 				break;
 				case 3:
